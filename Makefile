@@ -1,4 +1,9 @@
 # ----------------------------------
+#          PACKAGE ACTIONS
+# ----------------------------------
+download_all_jobs:
+	python -c 'from Dash_Work.api.api import save_all_jobs; save_all_jobs()'
+# ----------------------------------
 #          INSTALL & TEST
 # ----------------------------------
 install_requirements:
