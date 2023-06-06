@@ -1,0 +1,25 @@
+#number of open positions in Germany
+#length of open positions on website - calculated days: access date minus day of posting
+#sector
+#FT/PT
+#company size
+#company postcode: add zero to 4 digit postcodes
+#rural/ urban marker: definition rural/ urban
+#optional: skill per sector; topics per sector; skill level; open jobs per sector; remote working options
+import sqlite3
+
+db_path = 'TO BE FILLED IN'
+conn = sqlite3.connect(db_path)
+
+db = conn.cursor()
+
+#number of open positions in Germany
+
+def number_open_positions(db):
+    query = """
+        SELECT COUNT(*)
+        FROM hashId
+    """
+    db.execute(query)
+    count = db.fetchone()
+    return count[0]
