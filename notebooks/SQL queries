@@ -6,20 +6,37 @@
 #company postcode: add zero to 4 digit postcodes
 #rural/ urban marker: definition rural/ urban
 #optional: skill per sector; topics per sector; skill level; open jobs per sector; remote working options
-import sqlite3
 
-db_path = 'TO BE FILLED IN'
-conn = sqlite3.connect(db_path)
+import pandas as pd
+data = pd.read_csv('all_jobs.csv')
+df=pd.DataFrame(data)
+df.head(10)
 
-db = conn.cursor()
+#PREPROCESSING:
+#add zero to 4 digit postcodes
+df['postcode_5_digits'] = df['arbeitsort.plz'].apply(lambda x: str(x).zfill(5))
+#add timestamp of access minus today in number of days
+df['days_since_posting'] =  (pd.to_datetime('today') -pd.to_datetime(df['aktuelleVeroeffentlichungsdatum'])).min().days
 
-#number of open positions in Germany
 
-def number_open_positions(db):
-    query = """
-        SELECT COUNT(*)
-        FROM hashId
-    """
-    db.execute(query)
-    count = db.fetchone()
-    return count[0]
+# #add column with rural/ urban marker: definition rural/ urban
+
+# #add column with company size
+
+
+#SQL queries
+
+# #number of open positions in Germany
+
+# def number_open_positions(db):
+#     query = "SELECT COUNT(*)FROM df"
+#     result = sqldf(query, globals())
+#     return result
+# print(result)
+
+
+# def company_postcode(db):
+#    query = "SELECT arbeitsort.plz, COUNT(arbeitsort.plz) FROM df GROUP BY arbeitsort.plz"
+#    result = sqldf(query, globals())
+#    return result
+# print(result)
