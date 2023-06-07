@@ -19,7 +19,7 @@ st.sidebar.title("Dash/Work")
 st.sidebar.write(
     '''
     This is a Dashboard to get an overview on the  labor market  in German regions. Based on currently open job postings, we calculate a score to measure the status of the labor market for each German district and city.
-    '''
+    ''')
 st.sidebar.write("Find our team and contact information here: [GitHub Repository](https://github.com/LennartSchulze/Dash_Work)")
 
 ## END OF INFORMATION ON PROJECT ##
