@@ -55,24 +55,30 @@ st.title("Open positions in Germany")
 
 ## CHOOSE DATA BASE FOR MAP ##
 chosen_map = f"{geo_level_options.index(geo_level)}{sector_options.index(sector)}{company_size_options.index(company_size)}{skill_level_options.index(skill_level)}"
-st.write(chosen_map) #delete this line later
 ## END OF CHOOSE DATA BASE FOR MAP ##
 
+## GET THE GEO DATA FOR  THE MAP ##
 @st.cache_data()
-def get_data(chosen_map):
+def get_map(chosen_map):
     if chosen_map == "0000":
-        loadfile = "3_mittel"
+        loadfile = "counties"
+    if chosen_map =="1000":
+        loadfile = "states"
     gdf = gpd.read_file(f"{loadfile}.geo.json")
     return gdf
 
-gdf = get_data(chosen_map)
+gdf = get_map(chosen_map)
+## END OF GETTING GEO DATA FOR THE MAP ##
 
+## IMPLEMENT TO GET DATA FROM MASTER JOBS FILE ##
+#@st.cache_data()
+#def get_data()
 
 m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=6)
 style = {"fill_color": "green", "opacity" : .5, "weight": 1,"color": "green", "fillOpacity": .5}
 gjson = folium.GeoJson(data=gdf, style_function=lambda x:style).add_to(m)
-gjson.add_child(folium.features.GeoJsonTooltip(['NAME_3'],labels=False))
+gjson.add_child(folium.features.GeoJsonTooltip(["name"],labels=False))
 
-popup=folium.GeoJsonPopup(fields=["NAME_3"]).add_to(gjson)
+popup=folium.GeoJsonPopup(fields=["name"]).add_to(gjson)
 
 st_folium(m, returned_objects=[],  width=600, height=600)
