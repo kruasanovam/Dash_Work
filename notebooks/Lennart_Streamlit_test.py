@@ -20,19 +20,17 @@ st.sidebar.write(
     '''
     This is a Dashboard to get an overview on the  labor market  in German regions. Based on currently open job postings, we calculate a score to measure the status of the labor market for each German district and city.
     '''
-
-)
 st.sidebar.write("Find our team and contact information here: [GitHub Repository](https://github.com/LennartSchulze/Dash_Work)")
+
 ## END OF INFORMATION ON PROJECT ##
-
-
+  
 ## OPTIONS ##
 st.sidebar.title("Options")
 
 geo_level_options = ["Districts and Cities", "Bundeslaender"]
 geo_level_default = geo_level_options.index("Districts and Cities") #set default
 geo_level = st.sidebar.selectbox("Choose geographical level", options=geo_level_options, index=geo_level_default)
-
+ 
 sector_options = ["All Sectors", "Sector1","Sector2"]
 sector_default = sector_options.index("All Sectors") #set default
 sector = st.sidebar.selectbox("Focus on a specific sector", options=sector_options, index=sector_default)
@@ -48,20 +46,34 @@ skill_level = st.sidebar.selectbox("Focus on a specific skill level", options=sk
 
 #### END OF SIDEBAR ####
 
-#### MAP ####
+  
+#### BODY ####
+with open('style.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+st.title("Open positions in Germany")
 
 ## CHOOSE DATA BASE FOR MAP ##
 chosen_map = f"{geo_level_options.index(geo_level)}{sector_options.index(sector)}{company_size_options.index(company_size)}{skill_level_options.index(skill_level)}"
-st.write(chosen_map)
-## END OF CHOOSE DATA BASE AND MAP ##
-
+st.write(chosen_map) #delete this line later
+## END OF CHOOSE DATA BASE FOR MAP ##
 
 @st.cache_data()
 def get_data(chosen_map):
     if chosen_map == "0000":
-        loadfile = "plz-5stellig"
+        loadfile = "3_mittel.geo.json"
     gdf = gpd.read_file(f"{loadfile}.geojson")
     return gdf
 
 gdf = get_data(chosen_map)
-st.write(gdf.einwohner)
+  
+  
+m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=6)
+style = {"fill_color": "green", "opacity" : .5, "weight": 1,"color": "green", "fillOpacity": .5}
+gjson = folium.GeoJson(data=gdf, style_function=lambda x:style).add_to(m)
+gjson.add_child(folium.features.GeoJsonTooltip(['GEN'],labels=False))
+
+popup=folium.GeoJsonPopup(fields=["GEN"]).add_to(gjson)
+
+st_folium(m, returned_objects=[],  width=600, height=600)
+
