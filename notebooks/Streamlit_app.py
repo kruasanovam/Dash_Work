@@ -170,3 +170,10 @@ if output["last_object_clicked"] is not None:
 
 
     st.write(df_filtered)
+    df_filtered_pubdate = df_filtered.groupby("publication_date").count()
+    df_filtered_pubdate = df_filtered_pubdate.sort_values("refnr")
+    df_filtered_pubdate = df_filtered_pubdate.reset_index()
+    st.write(df_filtered_pubdate)
+
+    plot_pubdate = px.line(df_filtered_pubdate, x="publication_date", y="refnr")
+    st.plotly_chart(plot_pubdate)
