@@ -10,6 +10,7 @@ import folium
 from streamlit_folium import st_folium
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
+import plotly.express as px
 
 st.set_page_config(layout="wide")
 
@@ -151,3 +152,21 @@ if output["last_object_clicked"] is not None:
         polygon = gdf.geometry[i]
         if polygon.contains(punkt):
             st.write("The point you clicked on is in", gdf.name[i])
+            filter_var = gdf.name[i]
+
+    if grouper_var=="bundesland":
+        df_filtered = df[df["bundesland"]==filter_var]
+    if grouper_var=="landkreis":
+        df_filtered = df[df["landkreis"]==filter_var]
+
+    df_filtered_employer = df_filtered.groupby("arbeitgeber").count()
+    df_filtered_employer = df_filtered_employer.sort_values("refnr", ascending=False)
+    df_filtered_employer = df_filtered_employer.iloc[0:5]
+    df_filtered_employer = df_filtered_employer.reset_index()
+
+    plot_employer = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr")
+
+    st.plotly_chart(plot_employer)
+
+
+    st.write(df_filtered)
