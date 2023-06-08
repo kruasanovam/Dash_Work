@@ -146,9 +146,8 @@ output = st_folium(m, returned_objects=["last_object_clicked"], width=600, heigh
 
 
 
-st.write(output)
 
-df_points = pd.DataFrame(output, index=0)
+df_points = pd.DataFrame(output["last_object_clicked"]["lat"],output["last_object_clicked"]["lng"])
 
 st.write(df_points)
 
