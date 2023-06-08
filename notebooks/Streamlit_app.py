@@ -91,9 +91,9 @@ else:
 jobs_online = df.groupby(grouper_var).count().drop(columns=["arbeitgeber", "publication_date","hashId", "zip", dropper_var])
 jobs_online = jobs_online.reset_index()
 
+
 gdf.index = gdf["name"]
 gdf[grouper_var] = gdf["name"]
-
 
 
 m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=6)
@@ -119,8 +119,8 @@ folium.features.GeoJson(
                     tooltip=folium.features.GeoJsonTooltip(
                         fields=[grouper_var,
                                 ],
-                        #aliases=[grouper_var,
-                        #        ],
+                        aliases=[" ",
+                               ],
                         localize=True,
                         sticky=False,
                         labels=True,
@@ -143,9 +143,11 @@ folium.features.GeoJson(
 
 
 output = st_folium(m, returned_objects=["last_object_clicked"], width=600, height=600)
-punkt = Point(output["last_object_clicked"]["lng"], output["last_object_clicked"]["lat"])
 
-for i in range(len(gdf.geometry)):
-    polygon = gdf.geometry[i]
-    if polygon.contains(punkt):
-        st.write("The point you clicked on is in", gdf.name[i])
+if output["last_object_clicked"] is not None:
+    punkt = Point(output["last_object_clicked"]["lng"], output["last_object_clicked"]["lat"])
+
+    for i in range(len(gdf.geometry)):
+        polygon = gdf.geometry[i]
+        if polygon.contains(punkt):
+            st.write("The point you clicked on is in", gdf.name[i])
