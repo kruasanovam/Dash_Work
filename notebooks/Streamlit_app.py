@@ -143,13 +143,9 @@ folium.features.GeoJson(
 
 
 output = st_folium(m, returned_objects=["last_object_clicked"], width=600, height=600)
+punkt = Point(output["last_object_clicked"]["lng"], output["last_object_clicked"]["lat"])
 
-
-
-
-df_points = pd.DataFrame(output["last_object_clicked"]["lat"],output["last_object_clicked"]["lng"])
-
-st.write(df_points)
-
-polygon = gdf.geometry[0]
-df_points.apply(lambda x: polygon.contains(Point(x['Lat'], x['Lon'])), axis=1)
+for i in range(len(gdf.geometry)):
+    polygon = gdf.geometry[i]
+    if polygon.contains(punkt):
+        st.write("The point you clicked on is in", gdf.name[i])
