@@ -8,7 +8,8 @@ import geopandas as gpd
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
-from streamlit_folium import folium_static
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 st.set_page_config(layout="wide")
 
@@ -70,15 +71,81 @@ def get_map(chosen_map):
 gdf = get_map(chosen_map)
 ## END OF GETTING GEO DATA FOR THE MAP ##
 
-## IMPLEMENT TO GET DATA FROM MASTER JOBS FILE ##
-#@st.cache_data()
-#def get_data()
+## GET DATA FROM MASTER JOBS FILE ##
+@st.cache_data()
+def get_data():
+    df = pd.read_csv("MOCK_MASTER_ALL_JOB.csv", sep=";")
+    return df
+
+df = get_data()
+## END OF GET MASTER FILE DATA
+
+## GET SCORE - CURRENTLY: ABSOLUTE NUMBER OF JOBS ONLINE PER GEO UNIT ##
+if geo_level == "Bundeslaender":
+    grouper_var = "bundesland"
+    dropper_var = "landkreis"
+else:
+    grouper_var = "landkreis"
+    dropper_var = "bundesland"
+
+jobs_online = df.groupby(grouper_var).count().drop(columns=["arbeitgeber", "publication_date","hashId", "zip", dropper_var])
+jobs_online = jobs_online.reset_index()
+
+gdf.index = gdf["name"]
+gdf[grouper_var] = gdf["name"]
+
+
 
 m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=6)
-style = {"fill_color": "green", "opacity" : .5, "weight": 1,"color": "green", "fillOpacity": .5}
-gjson = folium.GeoJson(data=gdf, style_function=lambda x:style).add_to(m)
-gjson.add_child(folium.features.GeoJsonTooltip(["name"],labels=False))
 
-popup=folium.GeoJsonPopup(fields=["name"]).add_to(gjson)
+gjson = folium.Choropleth(
+    geo_data=gdf,
+    name="choropleth",
+    data=jobs_online,
+    columns=[grouper_var, "refnr"],
+    key_on="feature.id",
+    fill_color="YlOrRd",
+    fill_opacity=0.7,
+    line_opacity=1,
+    legend_name="Employment Status",
+).add_to(m)
 
-st_folium(m, returned_objects=[],  width=600, height=600)
+#Add Customized Tooltips to the map
+folium.features.GeoJson(
+                    data=gdf,
+                    name='New Jobs Online',
+                    smooth_factor=2,
+                    style_function=lambda x: {'color':'black','fillColor':'transparent','weight':0.5},
+                    tooltip=folium.features.GeoJsonTooltip(
+                        fields=[grouper_var,
+                                ],
+                        #aliases=[grouper_var,
+                        #        ],
+                        localize=True,
+                        sticky=False,
+                        labels=True,
+                        style="""
+                            background-color: #F0EFEF;
+                            border: 2px solid black;
+                            border-radius: 3px;
+                            box-shadow: 3px;
+                        """,
+                        max_width=100,),
+                            highlight_function=lambda x: {'weight':3,'fillColor':'grey'},
+                        ).add_to(m)
+
+
+#folium.LayerControl().add_to(m) #UNNECESSARY IF WE ONLY HAVE ONE MEANINGFUL LAYER - MAYBE CUT + Sometimes Buggy
+
+#output = st_folium(
+#    m, width=700, height=500, returned_objects=["last_object_clicked"]
+#    )
+
+
+output = st_folium(m, returned_objects=["last_object_clicked"], width=600, height=600)
+punkt = Point(output["last_object_clicked"]["lng"], output["last_object_clicked"]["lat"])
+
+for i in range(len(gdf.geometry)):
+    polygon = gdf.geometry[i]
+    if polygon.contains(punkt):
+        st.write("The point you clicked on is in", gdf.name[i])
