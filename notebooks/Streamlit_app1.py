@@ -11,7 +11,6 @@ from streamlit_folium import st_folium
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import plotly.express as px
-from utils import get_data_with_cache
 
 st.set_page_config(layout="wide")
 
@@ -66,7 +65,7 @@ with col1:
     chosen_map = f"{geo_level_options.index(geo_level)}{sector_options.index(sector)}{company_size_options.index(company_size)}{skill_level_options.index(skill_level)}"
     ## END OF CHOOSE DATA BASE FOR MAP ##
 
-    ## GET THE GEO DATA FOR THE MAP ##
+    ## GET THE GEO DATA FOR  THE MAP ##
     @st.cache_data()
     def get_map(chosen_map):
         if chosen_map == "0000":
@@ -77,31 +76,16 @@ with col1:
         return gdf
 
     gdf = get_map(chosen_map)
-
     ## END OF GETTING GEO DATA FOR THE MAP ##
-
 
     ## GET DATA FROM MASTER JOBS FILE ##
     @st.cache_data()
     def get_data():
-        df = pd.read_csv("master_all_jobs.csv", sep=",")
+        df = pd.read_csv("MOCK_MASTER_ALL_JOB.csv", sep=";")
         return df
 
     df = get_data()
-    df["landkreis"] = df["landkreis_georef"]
-
-    ## END OF GET DATA FROM MASTER JOBS FILE
-
-    ## GET DATA FROM BIG QUERY ##
-    # query = f"SELECT * FROM `{os.environ.get('GCP_PROJECT')}.master_all_jobs.jobs`"
-
-    # @st.cache_data()
-    # def get_data_from_google():
-    #     df = get_data_with_cache(query)
-    #     return df
-    # df = get_data_from_google()
-
-    ## END OF GET DATA FROM BIG QUERY ##
+    ## END OF GET MASTER FILE DATA
 
     ## GET SCORE - CURRENTLY: ABSOLUTE NUMBER OF JOBS ONLINE PER GEO UNIT ##
     if geo_level == "Bundeslaender":
@@ -111,16 +95,14 @@ with col1:
         grouper_var = "landkreis"
         dropper_var = "bundesland"
 
-    # THE FOLLOWING MUST GO TO PREPROCESSING #
-    jobs_online = df.groupby(grouper_var).count().drop(columns=[dropper_var])
+    jobs_online = df.groupby(grouper_var).count().drop(columns=["arbeitgeber", "publication_date","hashId", "zip", dropper_var])
     jobs_online = jobs_online.reset_index()
-    # UP MUST GO TO PREPROCESSING #
+
 
     gdf.index = gdf["name"]
     gdf[grouper_var] = gdf["name"]
 
 
-    #### MAP ####
     m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=5.5, width=500, height=400)
 
     gjson = folium.Choropleth(
@@ -160,8 +142,12 @@ with col1:
                             ).add_to(m)
 
 
+    #folium.LayerControl().add_to(m) #UNNECESSARY IF WE ONLY HAVE ONE MEANINGFUL LAYER - MAYBE CUT + Sometimes Buggy
 
-    ## GET CLICK ON GEO UNIT ##
+    #output = st_folium(
+    #    m, width=700, height=500, returned_objects=["last_object_clicked"]
+    #    )
+
 
     output = st_folium(m, returned_objects=["last_object_clicked"], width=600, height=600)
 
@@ -174,78 +160,54 @@ with col1:
                 st.write("The point you clicked on is in", gdf.name[i])
                 filter_var = gdf.name[i]
 
-    ## END OF GET CLICK ON GEO UNIT ##
+        if grouper_var=="bundesland":
+            df_filtered = df[df["bundesland"]==filter_var]
+        if grouper_var=="landkreis":
+            df_filtered = df[df["landkreis"]==filter_var]
 
-## GET FILTERED DATA SET BASED ON GEO UNIT ##
-## THIS PART WILL BE DONE BY THE GOOGLE QUERY ##
-    if grouper_var=="bundesland":
-        df_filtered = df[df["bundesland"]==filter_var]
-    if grouper_var=="landkreis":
-        df_filtered = df[df["landkreis"]==filter_var]
-## END OF GET FILTERED DATA
-## THE PART ABOVE WILL BE DONE BY THE GOOGLE QUERY
-
-#### COLUMN 2 DASHBOARD TILES ####
+        df_filtered_employer = df_filtered.groupby("arbeitgeber").count()
+        df_filtered_employer = df_filtered_employer.sort_values("refnr", ascending=False)
+        df_filtered_employer = df_filtered_employer.iloc[0:5]
+        df_filtered_employer = df_filtered_employer.reset_index()
 
 with col2:
-
-    df_filtered_employer = df_filtered.groupby("arbeitgeber").count()
-    df_filtered_employer = df_filtered_employer.sort_values("refnr", ascending=False)
-    df_filtered_employer = df_filtered_employer.iloc[0:5]
-    df_filtered_employer = df_filtered_employer.reset_index()
-
     if filter_var is not None:
         with st.container():
             st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
                     Open jobs: {len(df_filtered.index)}</div>""", unsafe_allow_html=True)
 
         with st.container():
-            tab1, tab2, tab3, tab4 = st.tabs(["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"])
-            with tab1:
-                st.write(f"""<b>Employers with most job offers</b>""", unsafe_allow_html=True)
-                plot_employer = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
-                plot_employer.update_layout(
-                    paper_bgcolor="#EFF2F6",
-                    plot_bgcolor="#EFF2F6",
-                    xaxis_title=None,
-                    yaxis_title=None,
-                        )
-                plot_employer.update_traces(
-                    marker_color="#09316B"
-                        )
+            st.write(f"""<b>Employers with most job offers</b>""", unsafe_allow_html=True)
+            plot_employer = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
+            plot_employer.update_layout(
+            paper_bgcolor="#EFF2F6",
+            plot_bgcolor="#EFF2F6",
+            xaxis_title=None,
+            yaxis_title=None,
 
-                plot_employer.add_annotation(
-                x="arbeitgeber",
-                xref="x",
-                yref="y",
-                font=dict(
-                    family="Courier New, monospace",
-                    size=16,
-                    color="#ffffff"
-                    ),
-                    )
+            )
+            plot_employer.update_traces(
+                marker_color="#09316B"
+            )
 
-                st.plotly_chart(plot_employer)
+            plot_employer.add_annotation(
+            x="arbeitgeber",
+            xref="x",
+            yref="y",
+            font=dict(
+                family="Courier New, monospace",
+                size=16,
+                color="#ffffff"
+                ),
+            )
 
-            with tab2:
-                df_filtered_pubdate = df_filtered.groupby("aktuelleVeroeffentlichungsdatum").count()
-                df_filtered_pubdate = df_filtered_pubdate.sort_values("refnr")
-                df_filtered_pubdate = df_filtered_pubdate.reset_index()
+            st.plotly_chart(plot_employer)
 
-                plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=450, height=350)
-                plot_pubdate.update_layout(
-                    paper_bgcolor="#EFF2F6",
-                    plot_bgcolor="#EFF2F6",
-                    xaxis_title=None,
-                    yaxis_title=None,
-                        )
-                plot_pubdate.update_traces(
-                    marker_color="#09316B"
-                        )
-                st.plotly_chart(plot_pubdate)
+        st.write(df_filtered)
+        df_filtered_pubdate = df_filtered.groupby("publication_date").count()
+        df_filtered_pubdate = df_filtered_pubdate.sort_values("refnr")
+        df_filtered_pubdate = df_filtered_pubdate.reset_index()
+        st.write(df_filtered_pubdate)
 
-            with tab3:
-                st.write("to be implemented")
-
-            with tab4:
-                st.write("to be implemented")
+        plot_pubdate = px.line(df_filtered_pubdate, x="publication_date", y="refnr")
+        st.plotly_chart(plot_pubdate)
