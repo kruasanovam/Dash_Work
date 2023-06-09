@@ -93,12 +93,12 @@ with col1:
     ## END OF GET DATA FROM MASTER JOBS FILE
 
     ## GET DATA FROM BIG QUERY ##
-    # query = f"SELECT * FROM `{os.environ.get('GCP_PROJECT')}.master_all_jobs.jobs`"
+    query = f"SELECT * FROM `{os.environ.get('GCP_PROJECT')}.master_all_jobs.jobs`"
 
     # @st.cache_data()
     # def get_data_from_google():
-    #     df = get_data_with_cache(query)
-    #     return df
+    #      df = get_data_with_cache(query)
+    #      return df
     # df = get_data_from_google()
 
     ## END OF GET DATA FROM BIG QUERY ##
@@ -194,6 +194,11 @@ with col2:
     df_filtered_employer = df_filtered_employer.iloc[0:5]
     df_filtered_employer = df_filtered_employer.reset_index()
 
+    df_filtered_branchengruppe = df_filtered.groupby("branchengruppe").count()
+    df_filtered_branchengruppe = df_filtered_branchengruppe.sort_values("refnr", ascending=False)
+    df_filtered_branchengruppe = df_filtered_branchengruppe.iloc[0:5]
+    df_filtered_branchengruppe = df_filtered_branchengruppe.reset_index()
+
     if filter_var is not None:
         with st.container():
             st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
@@ -221,6 +226,8 @@ with col2:
                 df_filtered_pubdate = df_filtered.groupby("aktuelleVeroeffentlichungsdatum").count()
                 df_filtered_pubdate = df_filtered_pubdate.sort_values("refnr")
                 df_filtered_pubdate = df_filtered_pubdate.reset_index()
+                df_filtered_pubdate = df_filtered_pubdate.sort_values(by="aktuelleVeroeffentlichungsdatum")
+
 
                 plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=450, height=350)
                 plot_pubdate.update_layout(
@@ -236,7 +243,7 @@ with col2:
 
             with tab3:
                 st.write(f"""<b>Sectors with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-                plot_sector = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
+                plot_sector = px.histogram(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=450, height=350)
                 plot_sector.update_layout(
                     paper_bgcolor="#EFF2F6",
                     plot_bgcolor="#EFF2F6",
@@ -245,10 +252,20 @@ with col2:
                         )
                 plot_sector.update_traces(
                     marker_color="#09316B"
-                )
+                  )
+
+                plot_sector.add_annotation(
+                x="Sector",
+                xref="x",
+                yref="y",
+                font=dict(
+                    family="Courier New, monospace",
+                    size=16,
+                    color="#ffffff"
+                    ),
+                    )
 
                 st.plotly_chart(plot_sector)
-
             with tab4:
                 st.write(f"""<b>Split of jobs in {filter_var} based on company size</b>""", unsafe_allow_html=True)
                 plot_size = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
