@@ -1,8 +1,18 @@
 # ----------------------------------
 #          PACKAGE ACTIONS
 # ----------------------------------
-download_all_jobs:
-	python -c 'from Dash_Work.api.api import save_all_jobs; save_all_jobs()'
+merge_tables_from_bq:
+	python -c 'from Dash_Work.data.utils_masha import merge_tables_from_bq; merge_tables_from_bq()'
+
+temp_upload:
+	python -c 'from Dash_Work.backend.data.utils_masha import temp_upload; temp_upload()'
+
+get_jobs_and_load_to_bg:
+	python -c 'from Dash_Work.backend.api.api import get_jobs_and_load_to_bg; get_jobs_and_load_to_bg()'
+
+get_all_job_details:
+	python -c 'from Dash_Work.backend.api.general_api import get_all_job_details; get_all_job_details()'
+
 # ----------------------------------
 #          INSTALL & TEST
 # ----------------------------------
@@ -45,16 +55,3 @@ count_lines:
 	@find ./tests -name '*.py' -exec  wc -l {} \; | sort -n| awk \
         '{printf "%4s %s\n", $$1, $$2}{s+=$$0}END{print s}'
 	@echo ''
-
-# ----------------------------------
-#      UPLOAD PACKAGE TO PYPI
-# ----------------------------------
-PYPI_USERNAME=<AUTHOR>
-build:
-	@python setup.py sdist bdist_wheel
-
-pypi_test:
-	@twine upload -r testpypi dist/* -u $(PYPI_USERNAME)
-
-pypi:
-	@twine upload dist/* -u $(PYPI_USERNAME)
