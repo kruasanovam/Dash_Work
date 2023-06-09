@@ -7,3 +7,6 @@ raw_data/
 **/__pycache__/
 .env
 utils_masha.py
+*.ipynb
+MOCK_MASTER_ALL_JOB.csv
+*xlsx
