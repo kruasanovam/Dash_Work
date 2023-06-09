@@ -207,7 +207,7 @@ with col2:
         with st.container():
             tab1, tab2, tab3, tab4 = st.tabs(["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"])
             with tab1:
-                st.write(f"""<b>Employers with most job offers</b>""", unsafe_allow_html=True)
+                st.write(f"""<b>Employers with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
                 plot_employer = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
                 plot_employer.update_layout(
                     paper_bgcolor="#EFF2F6",
@@ -219,20 +219,10 @@ with col2:
                     marker_color="#09316B"
                         )
 
-                plot_employer.add_annotation(
-                x="arbeitgeber",
-                xref="x",
-                yref="y",
-                font=dict(
-                    family="Courier New, monospace",
-                    size=16,
-                    color="#ffffff"
-                    ),
-                    )
-
                 st.plotly_chart(plot_employer)
 
             with tab2:
+                st.write(f"""<b>New jobs in {filter_var} over the last 5 years</b>""", unsafe_allow_html=True)
                 df_filtered_pubdate = df_filtered.groupby("aktuelleVeroeffentlichungsdatum").count()
                 df_filtered_pubdate = df_filtered_pubdate.sort_values("refnr")
                 df_filtered_pubdate = df_filtered_pubdate.reset_index()
@@ -252,19 +242,19 @@ with col2:
                 st.plotly_chart(plot_pubdate)
 
             with tab3:
-                st.write(f"""<b>Most important sectors</b>""", unsafe_allow_html=True)
-                plot_branchengruppe = px.histogram(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=450, height=350)
-                plot_branchengruppe.update_layout(
+                st.write(f"""<b>Sectors with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
+                plot_sector = px.histogram(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=450, height=350)
+                plot_sector.update_layout(
                     paper_bgcolor="#EFF2F6",
                     plot_bgcolor="#EFF2F6",
                     xaxis_title=None,
                     yaxis_title=None,
                         )
-                plot_branchengruppe.update_traces(
+                plot_sector.update_traces(
                     marker_color="#09316B"
-                        )
+                  )
 
-                plot_branchengruppe.add_annotation(
+                plot_sector.add_annotation(
                 x="Sector",
                 xref="x",
                 yref="y",
@@ -275,6 +265,18 @@ with col2:
                     ),
                     )
 
-                st.plotly_chart(plot_branchengruppe)
+                st.plotly_chart(plot_sector)
             with tab4:
-                st.write("to be implemented")
+                st.write(f"""<b>Split of jobs in {filter_var} based on company size</b>""", unsafe_allow_html=True)
+                plot_size = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
+                plot_size.update_layout(
+                    paper_bgcolor="#EFF2F6",
+                    plot_bgcolor="#EFF2F6",
+                    xaxis_title=None,
+                    yaxis_title=None,
+                        )
+                plot_size.update_traces(
+                    marker_color="#09316B"
+                )
+
+                st.plotly_chart(plot_size)
