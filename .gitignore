@@ -8,3 +8,7 @@ raw_data/
 .env
 .python-version
 .envrc
+utils_masha.py
+*.ipynb
+MOCK_MASTER_ALL_JOB.csv
+*xlsx
