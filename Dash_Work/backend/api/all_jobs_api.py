@@ -134,10 +134,9 @@ def get_all_jobs(places):
 
         if place_jobs:
             all_jobs.extend(place_jobs)
-
+            print(f"✅ Downloaded all jobs for place {place}. Data size =", place_df.shape)
             if num in save_rage:
                 place_df = pd.json_normalize(place_jobs)
-                print(f"✅ Downloaded all jobs for place {place}. Data size =", place_df.shape)
                 df = pd.json_normalize(all_jobs,sep='_')
                 file_path = f"{LOCAL_DATA_PATH_ALL_JOBS}/all_jobs_{timestamp}.csv"
                 save_df_to_csv(df, file_path)
