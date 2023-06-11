@@ -8,7 +8,7 @@ temp_upload:
 	python -c 'from Dash_Work.backend.data.utils_masha import temp_upload; temp_upload()'
 
 get_jobs_and_load_to_bg:
-	python -c 'from Dash_Work.backend.api.api import get_jobs_and_load_to_bg; get_jobs_and_load_to_bg()'
+	python -c 'from Dash_Work.backend.api.all_jobs_api import get_jobs_and_load_to_bg; get_jobs_and_load_to_bg()'
 
 get_all_job_details:
 	python -c 'from Dash_Work.backend.api.general_api import get_all_job_details; get_all_job_details()'

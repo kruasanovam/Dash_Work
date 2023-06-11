@@ -35,80 +35,25 @@ def get_jwt():
       'grant_type': 'client_credentials'
     }
 
-    response = requests.post(URL, headers=headers, data=data, verify=False)
     print ("🧚‍♀️ Trying to get authorisation token to connect to the API...")
+    response = requests.post(URL, headers=headers, data=data, verify=False)
 
-    if response.status_code != 200:
-        if response.status_code in [401, 403]:
-            print (response.status_code)
-            print ("Maybe token is expired? Trying with a new token")
-            headers['OAuthAccessToken'] = get_jwt()
-            print(response.json())
-            response = requests.get(url=URL, headers=headers, verify=False)
-        else:
-            print ("Something is wrong...here is the response:")
-            print (response.status_code)
-            print (response.content)
+    if response.status_code == 200:
+        print(f"✅ Auth token received!")
+        print(f'New token: {response.json()["access_token"]}')
+    elif response.status_code in [401, 403]:
+        print (response.status_code)
+        print ("Maybe token is expired? Trying with a new token")
+        headers['OAuthAccessToken'] = get_jwt()
+        print(response.json())
+        response = requests.get(url=URL, headers=headers, verify=False)
+    else:
+        print ("Something is wrong...here is the response:")
+        print (response.status_code)
+        print (response.content)
 
     return response.json()["access_token"]
 
-
-
-def get_all_jobs(places):
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    page_size= 100
-    umkreis = 0
-    all_jobs = []
-    jwt = get_jwt()
-    print(f"✅ Auth token received!")
-
-    places = places
-    save_rage = np.arange(10000, 2000000, 10000).tolist()
-    num = 1
-
-    for place in places:
-        branches = get_branches_per_arbeitsort(jwt, place, umkreis=umkreis)
-
-        place_jobs = []
-        for branche in branches:
-            page_jobs = True
-            page = 1
-            while page_jobs:
-                page_jobs = search_jobs(jwt, arbeitsort=place, umkreis=umkreis, branche=branche,
-                                page=page, page_size=page_size).get("stellenangebote", [])
-                if page_jobs:
-                    print(f"👀 Downloading jobs for place {place} and branche {branche} from page {page}...")
-                    place_jobs.extend(page_jobs)
-                    page += 1
-
-        if place_jobs:
-            all_jobs.extend(place_jobs)
-
-            if num in save_rage:
-                place_df = pd.json_normalize(place_jobs)
-                print(f"✅ Downloaded all jobs for place {place}. Data size =", place_df.shape)
-                df = pd.json_normalize(all_jobs,sep='_')
-                df.to_csv(f"{LOCAL_DATA_PATH_ALL_JOBS}/all_jobs_{timestamp}.csv")
-                print(f"✅✅Saved {num} jobs and saved to file 'all_jobs_{timestamp}.csv'. Data size =", df.shape)
-        num += 1
-
-    return df
-
-def get_jobs_and_load_to_bg():
-
-    all_places = get_latest_arbeitsort_list()
-    start_time = time.time()
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    data = get_all_jobs(places=all_places)
-    table_name = f'raw_all_jobs_{timestamp}'
-    save_dataframe_to_bq(
-            data,
-            gcp_project=GCP_PROJECT,
-            bq_dataset=BQ_DATASET,
-            table=table_name,
-            truncate=True
-        )
-    print("--- %s seconds ---" % (time.time() - start_time))
 
 def get_all_job_details():
 
@@ -118,16 +63,17 @@ def get_all_job_details():
     print(f"✅List of job ids downloaded from BQ! Total number or jobs = {len(job_refs)}")
     all_details = []
     jwt = get_jwt()
-    print(f"✅ Auth token received!")
     start_time = time.time()
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     save_rage = np.arange(1000, 2000000, 1000).tolist()
     num = 0
-    for ref in job_refs:
-        #print (save_rage)
-        print(f"👀 Fetching job ref {ref}. Only {(len(job_refs)-num)} jobs left 🤞🤞🤞")
-        job_detail = get_job_detail(jwt, ref)
-
+    for ref in job_refs[101900:]:
+        print(f"👀 Fetching job ref {ref}. Only {(len(job_refs[101900:])-num)} jobs left 🤞🤞🤞")
+        job_detail_api_result = get_job_detail(jwt, ref)
+        job_detail = job_detail_api_result[0]
+        if job_detail_api_result[1]:
+            jwt = get_jwt()
+            job_detail = job_detail_api_result[0]
         all_details.append([
                             job_detail.get("refnr", None),
                             job_detail.get("aktuelleVeroeffentlichungsdatum", None),
@@ -158,12 +104,20 @@ def get_all_job_details():
                       "titel", "beruf", "stellenbeschreibung", "tarifvertrag", "arbeitgeberdarstellung",
                       "istPrivateArbeitsvermittlung", "istZeitarbeit"
                       ]
-            df.to_csv(f"{LOCAL_DATA_PATH_JOB_DETAILS}/job_details_{timestamp}.csv")
-            print(f"✅ Saved {num} jobs to file 'jobs_details_{timestamp}.csv'. Data size =", df.shape)
+            file_path = f"{LOCAL_DATA_PATH_JOB_DETAILS}/job_details_{timestamp}.csv"
+            save_df_to_csv(df, file_path)
         num+=1
     print("✅✅✅ DONE for ALL jobs", df.shape)
     print("--- %s seconds ---" % (time.time() - start_time))
 
+def save_df_to_csv(df, file_path):
+    try:
+        df.to_csv(file_path)
+        print(f"✅ Saved jobs to {file_path}. Data size =", df.shape)
+    except UnicodeEncodeError as e:
+        print(f"UnicodeEncodeError when saving df to csv file {str(e)}. List of unsaved jobs: {df['refnr']}")
+    except:
+        print(f"Something else when saving df to csv file. List of unsaved jobs: {df['refnr']}")
 
 if __name__ == "__main__":
     pass
