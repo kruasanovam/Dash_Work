@@ -11,7 +11,7 @@ from streamlit_folium import st_folium
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import plotly.express as px
-from utils import get_data_with_cache
+from notebooks.utils import get_data_with_cache
 
 st.set_page_config(layout="wide")
 
@@ -51,7 +51,7 @@ skill_level = st.sidebar.selectbox("Focus on a specific skill level", options=sk
 
 
 #### BODY ####
-with open('style.css') as f:
+with open('Dash_Work/frontend/style.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 st.title("Open positions in Germany")
@@ -73,7 +73,7 @@ with col1:
             loadfile = "counties"
         if chosen_map =="1000":
             loadfile = "states"
-        gdf = gpd.read_file(f"{loadfile}.geo.json")
+        gdf = gpd.read_file(f"../Dash_Work/data/raw_generated/{loadfile}.geo.json")
         return gdf
 
     gdf = get_map(chosen_map)
@@ -84,7 +84,7 @@ with col1:
     ## GET DATA FROM MASTER JOBS FILE ##
     @st.cache_data()
     def get_data():
-        df = pd.read_csv("master_all_jobs.csv", sep=",")
+        df = pd.read_csv("notebooks/master_all_jobs.csv", sep=",")
         return df
 
     df = get_data()
@@ -121,7 +121,7 @@ with col1:
 
 
     #### MAP ####
-    m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=5.5, width=500, height=400)
+    m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=5.5, width="100%", height=400)
 
     gjson = folium.Choropleth(
         geo_data=gdf,
@@ -163,7 +163,7 @@ with col1:
 
     ## GET CLICK ON GEO UNIT ##
 
-    output = st_folium(m, returned_objects=["last_object_clicked"], width=600, height=600)
+    output = st_folium(m, returned_objects=["last_object_clicked"], width="100%", height=600)
 
     if output["last_object_clicked"] is not None:
         punkt = Point(output["last_object_clicked"]["lng"], output["last_object_clicked"]["lat"])
@@ -205,13 +205,15 @@ with col2:
                     Open jobs: {len(df_filtered.index)}</div>""", unsafe_allow_html=True)
 
         with st.container():
-            tab1, tab2, tab3, tab4 = st.tabs(["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"])
-            with tab1:
+            listTabs = ["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"]
+            whitespace = 15
+            tabs = st.tabs([s.center(whitespace,"\u2001") for s in listTabs])
+            with tabs[0]:
                 st.write(f"""<b>Employers with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-                plot_employer = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
+                plot_employer = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=490, height=350)
                 plot_employer.update_layout(
-                    paper_bgcolor="#EFF2F6",
-                    plot_bgcolor="#EFF2F6",
+                    #paper_bgcolor="#EFF2F6",
+                    #plot_bgcolor="#EFF2F6",
                     xaxis_title=None,
                     yaxis_title=None,
                         )
@@ -221,7 +223,7 @@ with col2:
 
                 st.plotly_chart(plot_employer)
 
-            with tab2:
+            with tabs[1]:
                 st.write(f"""<b>New jobs in {filter_var} over the last 5 years</b>""", unsafe_allow_html=True)
                 df_filtered_pubdate = df_filtered.groupby("aktuelleVeroeffentlichungsdatum").count()
                 df_filtered_pubdate = df_filtered_pubdate.sort_values("refnr")
@@ -229,10 +231,10 @@ with col2:
                 df_filtered_pubdate = df_filtered_pubdate.sort_values(by="aktuelleVeroeffentlichungsdatum")
 
 
-                plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=450, height=350)
+                plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350)
                 plot_pubdate.update_layout(
-                    paper_bgcolor="#EFF2F6",
-                    plot_bgcolor="#EFF2F6",
+                    #paper_bgcolor="#EFF2F6",
+                    #plot_bgcolor="#EFF2F6",
                     xaxis_title=None,
                     yaxis_title=None,
                         )
@@ -241,12 +243,12 @@ with col2:
                         )
                 st.plotly_chart(plot_pubdate)
 
-            with tab3:
+            with tabs[2]:
                 st.write(f"""<b>Sectors with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-                plot_sector = px.histogram(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=450, height=350)
+                plot_sector = px.histogram(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=500, height=350)
                 plot_sector.update_layout(
-                    paper_bgcolor="#EFF2F6",
-                    plot_bgcolor="#EFF2F6",
+                    #paper_bgcolor="#EFF2F6",
+                    #plot_bgcolor="#EFF2F6",
                     xaxis_title=None,
                     yaxis_title=None,
                         )
@@ -266,12 +268,12 @@ with col2:
                     )
 
                 st.plotly_chart(plot_sector)
-            with tab4:
+            with tabs[3]:
                 st.write(f"""<b>Split of jobs in {filter_var} based on company size</b>""", unsafe_allow_html=True)
-                plot_size = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=450, height=350)
+                plot_size = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=500, height=350)
                 plot_size.update_layout(
-                    paper_bgcolor="#EFF2F6",
-                    plot_bgcolor="#EFF2F6",
+                    #paper_bgcolor="#EFF2F6",
+                    #plot_bgcolor="#EFF2F6",
                     xaxis_title=None,
                     yaxis_title=None,
                         )
