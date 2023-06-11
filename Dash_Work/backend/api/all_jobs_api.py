@@ -111,7 +111,7 @@ def get_all_jobs(places):
     jwt = get_jwt()
 
     places = places
-    save_rage = np.arange(10000, 2000000, 10000).tolist()
+    save_rage = np.arange(100, len(places), 100).tolist()
     num = 1
 
     for place in places:
