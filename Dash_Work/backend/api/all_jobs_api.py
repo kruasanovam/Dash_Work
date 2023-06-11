@@ -134,7 +134,7 @@ def get_all_jobs(places):
 
         if place_jobs:
             all_jobs.extend(place_jobs)
-            print(f"✅ Downloaded all jobs for place {place}. Data size =", place_df.shape)
+            print(f"✅ Downloaded all jobs for place {place}. Data size =", len(place_jobs))
             if num in save_rage:
                 place_df = pd.json_normalize(place_jobs)
                 df = pd.json_normalize(all_jobs,sep='_')
