@@ -24,6 +24,10 @@ div#map_div {
     justify-content: center;
 }
 
+/*.float-child {
+    width: 90%
+}*/
+
 /* Making top bar disappear */
 header.css-18ni7ap.e13qjvis2 {
     display: none
@@ -33,15 +37,15 @@ div#block-container.css-z5fcl4 {
     padding: 3rem 1rem 10rem;
 }
 
-/* Cards right side*/
+/* Styling Cards right side*/
 .cards {
     border-style: solid;
     border-color: #DCDCDC;
     border-radius: 0.25rem;
-    /*box-shadow: 3px 3px #f0f0f0;*/
-    background-color: #EFF2F6;
-    padding:0px 10px 30px 5px;
-    width: 450px;
+    box-shadow: 3px 3px #EFF2F6;
+    /*background-color: #EFF2F6; */
+    padding: 0px 10px 30px 5px;
+    width: 100%;
     margin-bottom: 20px;
 }
 
@@ -68,13 +72,28 @@ footer.css-164nlkn.e1g8pov61 {
 }
 */
 
+/* Tab styling*/
 .stTabs.css-p5arxg.e15kodlz0 {
+    padding: 5px;
     border-style: solid;
     border-color: #DCDCDC;
     border-radius: 0.25rem;
-    width: 450px
+    width: 100%;
+    box-shadow: 3px 3px #EFF2F6;
 }
 
-.st-dr:hover {
-    font-weight: bold !important;
+/* Tab headers styling */
+
+[data-baseweb="tab-list"] [data-baseweb="tab-highlight"] {
+    background-color: #3868A1
+}
+
+[data-baseweb="tab-list"] [tabindex="0"] {
+    color: #3868A1;
+    font-weight: bold
+}
+
+[data-baseweb="tab-list"] [tabindex="-1"]:hover {
+    color: #3868A1;
+    font-weight:bold
 }
