@@ -111,9 +111,9 @@ def get_all_jobs(places):
     jwt = get_jwt()
 
     places = places
-    save_rage = np.arange(100, len(places), 100).tolist()
+    save_rage = np.arange(10, len(places), 10).tolist()
     num = 1
-
+    print (save_rage)
     for place in places:
         branches = get_branches_per_arbeitsort(jwt, place, umkreis=umkreis)
 
@@ -135,11 +135,11 @@ def get_all_jobs(places):
         if place_jobs:
             all_jobs.extend(place_jobs)
             print(f"✅ Downloaded all jobs for place {place}. Data size =", len(place_jobs))
-            if num in save_rage:
-                place_df = pd.json_normalize(place_jobs)
-                place_df = pd.json_normalize(all_jobs,sep='_')
-                file_path = f"{LOCAL_DATA_PATH_ALL_JOBS}/all_jobs_{timestamp}.csv"
-                save_df_to_csv(place_df, file_path)
+        if num in save_rage:
+            place_df = pd.json_normalize(place_jobs)
+            place_df = pd.json_normalize(all_jobs,sep='_')
+            file_path = f"{LOCAL_DATA_PATH_ALL_JOBS}/all_jobs_{timestamp}.csv"
+            save_df_to_csv(place_df, file_path)
         num += 1
 
     return df
