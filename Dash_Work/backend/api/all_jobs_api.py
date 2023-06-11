@@ -102,6 +102,9 @@ def get_jwt():
     return response.json()["access_token"]
 
 def get_all_jobs(places):
+    start_time = time.time()
+    print("STARTING! --- %s seconds ---" % start_time)
+    print ()
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     page_size= 100
     umkreis = 0
