@@ -23,10 +23,12 @@ headers = {
         'Connection': 'keep-alive',
     }
 
+URL = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs'
+
 @retry
 def search_jobs(jwt, arbeitsort=None, umkreis=None, branche=None, page=None, page_size=None):
     """search for jobs. params can be found here: https://jobsuche.api.bund.dev/"""
-    URL = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs'
+
     headers['OAuthAccessToken']=jwt
     params = (
         ('arbeitsort', arbeitsort),
@@ -124,7 +126,7 @@ def get_all_jobs(places):
                 if page_jobs_api_result[1]:
                     jwt = get_jwt()
                 if page_jobs:
-                    print(f"👀 Downloading jobs for place {place} and branche {branche} from page {page}...")
+                    #print(f"👀 Downloading jobs for place {place} and branche {branche} from page {page}...")
                     place_jobs.extend(page_jobs)
                     page += 1
 
