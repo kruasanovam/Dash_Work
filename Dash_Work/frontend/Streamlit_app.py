@@ -11,7 +11,7 @@ from streamlit_folium import st_folium
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import plotly.express as px
-from notebooks.utils import get_data_with_cache
+from google.cloud import storage
 
 st.set_page_config(layout="wide")
 
@@ -34,24 +34,40 @@ geo_level_options = ["Districts and Cities", "Bundeslaender"]
 geo_level_default = geo_level_options.index("Districts and Cities") #set default
 geo_level = st.sidebar.selectbox("Choose geographical level", options=geo_level_options, index=geo_level_default)
 
-sector_options = ["All Sectors", "Sector1","Sector2"]
-sector_default = sector_options.index("All Sectors") #set default
-sector = st.sidebar.selectbox("Focus on a specific sector", options=sector_options, index=sector_default)
-
-company_size_options = ["All Companies", "0-5 employees","6-20 employees", "20-200 employees","more than 200 employees"]
-company_size_default = company_size_options.index("All Companies") #set default
-company_size = st.sidebar.selectbox("Focus on a specific company size", options=company_size_options, index=company_size_default)
-
-skill_level_options = ["All Levels", "University Education", "Vocational Training", "No Training required"]
-skill_level_default = skill_level_options.index("All Levels")
-skill_level = st.sidebar.selectbox("Focus on a specific skill level", options=skill_level_options, index=skill_level_default)
-## END OF OPTIONS ##
-
+## END OF CHOOSE DATA BASE FOR MAP ##
 #### END OF SIDEBAR ####
 
 
+## GET THE GEO DATA FOR THE MAP ##
+@st.cache_data()
+def get_map(geolevel):
+    bucket_name = "dash_work"
+
+    pathdata = os.path.dirname(os.path.abspath(__file__))
+    if geolevel == "Districts and Cities":
+        loadfile = "counties"
+
+    if geolevel =="Bundeslaender":
+        loadfile = "states"
+
+    source_blob_name = f"{loadfile}.geo.json"
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+
+    blob = bucket.blob(source_blob_name)
+    blob.download_to_filename(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
+
+    gdf = gpd.read_file(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
+    return gdf
+
+gdf = get_map(geo_level)
+
+
+
 #### BODY ####
-with open('Dash_Work/frontend/style.css') as f:
+pathbody = os.path.dirname(os.path.abspath(__file__))
+#with open('Dash_Work/frontend/style.css') as f:
+with open(os.path.join(pathbody, "style.css")) as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 st.title("Open positions in Germany")
@@ -62,46 +78,16 @@ col1, col2 = st.columns(2)
 
 with col1:
 
-    ## CHOOSE DATA BASE FOR MAP ##
-    chosen_map = f"{geo_level_options.index(geo_level)}{sector_options.index(sector)}{company_size_options.index(company_size)}{skill_level_options.index(skill_level)}"
-    ## END OF CHOOSE DATA BASE FOR MAP ##
-
-    ## GET THE GEO DATA FOR THE MAP ##
-    @st.cache_data()
-    def get_map(chosen_map):
-        if chosen_map == "0000":
-            loadfile = "counties"
-        if chosen_map =="1000":
-            loadfile = "states"
-        gdf = gpd.read_file(f"../Dash_Work/data/raw_generated/{loadfile}.geo.json")
-        return gdf
-
-    gdf = get_map(chosen_map)
-
-    ## END OF GETTING GEO DATA FOR THE MAP ##
-
-
     ## GET DATA FROM MASTER JOBS FILE ##
+    ## WILL BE DELETED WHEN GEOJSON FILES ARE COMPLETE
     @st.cache_data()
     def get_data():
-        df = pd.read_csv("notebooks/master_all_jobs.csv", sep=",")
+        df = pd.read_csv("/Users/lennartschulze/code/LennartSchulze/Dash_Work/notebooks/master_all_jobs.csv", sep=",")
         return df
 
     df = get_data()
     df["landkreis"] = df["landkreis_georef"]
-
     ## END OF GET DATA FROM MASTER JOBS FILE
-
-    ## GET DATA FROM BIG QUERY ##
-    query = f"SELECT * FROM `{os.environ.get('GCP_PROJECT')}.master_all_jobs.jobs`"
-
-    # @st.cache_data()
-    # def get_data_from_google():
-    #      df = get_data_with_cache(query)
-    #      return df
-    # df = get_data_from_google()
-
-    ## END OF GET DATA FROM BIG QUERY ##
 
     ## GET SCORE - CURRENTLY: ABSOLUTE NUMBER OF JOBS ONLINE PER GEO UNIT ##
     if geo_level == "Bundeslaender":
@@ -118,6 +104,8 @@ with col1:
 
     gdf.index = gdf["name"]
     gdf[grouper_var] = gdf["name"]
+
+    ## ALL ABOVE OUT WHEN GEOJSON FILES READY ##
 
 
     #### MAP ####
@@ -178,6 +166,7 @@ with col1:
 
 ## GET FILTERED DATA SET BASED ON GEO UNIT ##
 ## THIS PART WILL BE DONE BY THE GOOGLE QUERY ##
+try:
     if grouper_var=="bundesland":
         df_filtered = df[df["bundesland"]==filter_var]
     if grouper_var=="landkreis":
@@ -187,19 +176,19 @@ with col1:
 
 #### COLUMN 2 DASHBOARD TILES ####
 
-with col2:
+    with col2:
 
-    df_filtered_employer = df_filtered.groupby("arbeitgeber").count()
-    df_filtered_employer = df_filtered_employer.sort_values("refnr", ascending=False)
-    df_filtered_employer = df_filtered_employer.iloc[0:5]
-    df_filtered_employer = df_filtered_employer.reset_index()
+        df_filtered_employer = df_filtered.groupby("arbeitgeber").count()
+        df_filtered_employer = df_filtered_employer.sort_values("refnr", ascending=False)
+        df_filtered_employer = df_filtered_employer.iloc[0:5]
+        df_filtered_employer = df_filtered_employer.reset_index()
 
-    df_filtered_branchengruppe = df_filtered.groupby("branchengruppe").count()
-    df_filtered_branchengruppe = df_filtered_branchengruppe.sort_values("refnr", ascending=False)
-    df_filtered_branchengruppe = df_filtered_branchengruppe.iloc[0:5]
-    df_filtered_branchengruppe = df_filtered_branchengruppe.reset_index()
+        df_filtered_branchengruppe = df_filtered.groupby("branchengruppe").count()
+        df_filtered_branchengruppe = df_filtered_branchengruppe.sort_values("refnr", ascending=False)
+        df_filtered_branchengruppe = df_filtered_branchengruppe.iloc[0:5]
+        df_filtered_branchengruppe = df_filtered_branchengruppe.reset_index()
 
-    if filter_var is not None:
+
         with st.container():
             st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
                     Open jobs: {len(df_filtered.index)}</div>""", unsafe_allow_html=True)
@@ -210,7 +199,7 @@ with col2:
             tabs = st.tabs([s.center(whitespace,"\u2001") for s in listTabs])
             with tabs[0]:
                 st.write(f"""<b>Employers with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-                plot_employer = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=490, height=350)
+                plot_employer = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=490, height=350, text_auto=True)
                 plot_employer.update_layout(
                     #paper_bgcolor="#EFF2F6",
                     #plot_bgcolor="#EFF2F6",
@@ -221,7 +210,7 @@ with col2:
                     marker_color="#09316B"
                         )
 
-                st.plotly_chart(plot_employer)
+                st.plotly_chart(plot_employer, use_container_width=True)
 
             with tabs[1]:
                 st.write(f"""<b>New jobs in {filter_var} over the last 5 years</b>""", unsafe_allow_html=True)
@@ -241,11 +230,11 @@ with col2:
                 plot_pubdate.update_traces(
                     marker_color="#09316B"
                         )
-                st.plotly_chart(plot_pubdate)
+                st.plotly_chart(plot_pubdate, use_container_width=True)
 
             with tabs[2]:
                 st.write(f"""<b>Sectors with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-                plot_sector = px.histogram(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=500, height=350)
+                plot_sector = px.bar(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=500, height=350, text_auto=True)
                 plot_sector.update_layout(
                     #paper_bgcolor="#EFF2F6",
                     #plot_bgcolor="#EFF2F6",
@@ -254,7 +243,7 @@ with col2:
                         )
                 plot_sector.update_traces(
                     marker_color="#09316B"
-                  )
+                    )
 
                 plot_sector.add_annotation(
                 x="Sector",
@@ -267,10 +256,11 @@ with col2:
                     ),
                     )
 
-                st.plotly_chart(plot_sector)
+                st.plotly_chart(plot_sector, use_container_width=True)
+
             with tabs[3]:
                 st.write(f"""<b>Split of jobs in {filter_var} based on company size</b>""", unsafe_allow_html=True)
-                plot_size = px.histogram(df_filtered_employer, x="arbeitgeber", y="refnr", width=500, height=350)
+                plot_size = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=500, height=350, text_auto=True)
                 plot_size.update_layout(
                     #paper_bgcolor="#EFF2F6",
                     #plot_bgcolor="#EFF2F6",
@@ -281,4 +271,7 @@ with col2:
                     marker_color="#09316B"
                 )
 
-                st.plotly_chart(plot_size)
+                st.plotly_chart(plot_size, use_container_width=True)
+
+except NameError:
+    st.write("")
