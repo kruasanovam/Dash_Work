@@ -67,8 +67,9 @@ def get_all_job_details():
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     save_rage = np.arange(1000, 2000000, 1000).tolist()
     num = 0
-    for ref in job_refs[101900:]:
-        print(f"👀 Fetching job ref {ref}. Only {(len(job_refs[101900:])-num)} jobs left 🤞🤞🤞")
+    num_jobs = len(job_refs)
+    for ref in job_refs:
+        print(f"👀 Fetching job ref {ref}. Only {(num_jobs-num)} jobs left 🤞🤞🤞")
         job_detail_api_result = get_job_detail(jwt, ref)
         job_detail = job_detail_api_result[0]
         if job_detail_api_result[1]:

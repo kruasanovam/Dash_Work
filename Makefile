@@ -13,6 +13,10 @@ get_jobs_and_load_to_bg:
 get_all_job_details:
 	python -c 'from Dash_Work.backend.api.general_api import get_all_job_details; get_all_job_details()'
 
+merge_csv_files:
+
+	python -c 'from Dash_Work.backend.data.utils_masha import merge_csv_files; merge_csv_files()'
+
 # ----------------------------------
 #          INSTALL & TEST
 # ----------------------------------
