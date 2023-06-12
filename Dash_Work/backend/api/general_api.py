@@ -57,7 +57,7 @@ def get_jwt():
 
 def get_all_job_details():
 
-    table_name = 'all_jobs'
+    table_name = 'raw_all_jobs_20230612_011752'
     print(f"👀 Fetching list of job ids from BQ!")
     job_refs = download_table_from_bg(table_name)
     print(f"✅List of job ids downloaded from BQ! Total number or jobs = {len(job_refs)}")
