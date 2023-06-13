@@ -52,11 +52,11 @@ def get_map(geolevel):
         loadfile = "states"
 
     source_blob_name = f"{loadfile}.geo.json"
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
+    # storage_client = storage.Client()
+    # bucket = storage_client.bucket(bucket_name)
 
-    blob = bucket.blob(source_blob_name)
-    blob.download_to_filename(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
+    # blob = bucket.blob(source_blob_name)
+    # blob.download_to_filename(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
 
     gdf = gpd.read_file(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
     return gdf
