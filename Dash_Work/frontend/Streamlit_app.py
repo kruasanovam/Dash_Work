@@ -13,7 +13,7 @@ from shapely.geometry.polygon import Polygon
 import plotly.express as px
 from google.cloud import storage
 
-api_url = "https://dash-work-qjpoayquoq-uc.a.run.app"
+api_url = st.secrets["api_url"]
 
 st.set_page_config(layout="wide")
 
