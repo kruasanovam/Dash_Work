@@ -12,3 +12,4 @@ utils_masha.py
 *.ipynb
 MOCK_MASTER_ALL_JOB.csv
 *xlsx
+*.json

@@ -41,18 +41,18 @@ def save_dataframe_to_bq(
     print(f"✅ Data saved to bigquery, with shape {data.shape}")
 
 
-def download_table_from_bg(table_name):
+def download_master_all_jobs_table_from_bg(table_name):
 
     query = f"""
-        SELECT {"refnr"}
+        SELECT *
         FROM {GCP_PROJECT}.{BQ_DATASET}.{table_name}
         """
     client = bigquery.Client(project=GCP_PROJECT)
     query_job = client.query(query)
     result = query_job.result()
-    list = result.to_dataframe().values.flatten().tolist()
+    df = result.to_dataframe()
 
-    return list
+    return df
 
 
 def get_latest_arbeitsort_list():
@@ -92,7 +92,3 @@ def join_tables_from_bq():
             truncate=True
         )
     print("✅✅✅ Uploaded dataframe to Big Query")
-
-
-if __name__ == "__main__":
-    pass
