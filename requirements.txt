@@ -23,7 +23,8 @@ google-cloud-storage
 google-cloud-bigquery
 mlflow
 s3fs
-google.oauth2
+google-auth
+google-oauth2
 
 # utilities
 six>=1.14
