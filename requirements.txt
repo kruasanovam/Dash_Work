@@ -23,6 +23,8 @@ google-cloud-storage
 google-cloud-bigquery
 mlflow
 s3fs
+google-auth
+google_oauth2_tool
 
 # utilities
 six>=1.14
@@ -31,3 +33,14 @@ memoized-property
 termcolor
 colorama
 retrying
+
+#frontend
+geopandas
+folium
+streamlit_folium
+shapely
+plotly-express
+pathlib
+requests
+datetime
+zipfile36
