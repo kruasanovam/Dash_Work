@@ -39,7 +39,7 @@ geopandas
 folium
 streamlit_folium
 shapely
-plotly.express
+plotly-express
 pathlib
 requests
 os
