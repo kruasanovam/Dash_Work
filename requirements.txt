@@ -42,6 +42,5 @@ shapely
 plotly-express
 pathlib
 requests
-os-sys
 datetime
 zipfile36
