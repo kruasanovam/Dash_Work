@@ -38,7 +38,7 @@ retrying
 geopandas
 folium
 streamlit_folium
-shapely.geometry
+shapely
 plotly.express
 pathlib
 requests
