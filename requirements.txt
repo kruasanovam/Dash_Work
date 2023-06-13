@@ -44,4 +44,4 @@ pathlib
 requests
 os-sys
 datetime
-zipfile
+zipfile36
