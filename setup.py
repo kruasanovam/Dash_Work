@@ -10,8 +10,8 @@ setup(name='Dash_Work',
       description="Project Description",
       packages=find_packages(),
       install_requires=requirements,
-      test_suite='tests',
+      #test_suite='tests',
       # include_package_data: to install data from MANIFEST.in
       include_package_data=True,
-      scripts=['scripts/Dash_Work-run'],
+      #scripts=['scripts/Dash_Work-run'],
       zip_safe=False)
