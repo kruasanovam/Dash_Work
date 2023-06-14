@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
-from pathlib import Path
-from Dash_Work.params import LOCAL_PROJECT_PATH
 from google.oauth2 import service_account
 import os
 
@@ -25,23 +23,15 @@ app.add_middleware(
 
 
 def get_map_bq(grouper_var):
-    if grouper_var == 'landkreis':
-        grouper_var = 'landkreis_georef'
-
     query = f"""SELECT count({grouper_var}) as num_jobs, {grouper_var}
     FROM wagon-bootcamp-384015.dash_work.master_all_jobs GROUP BY {grouper_var}
         """
-
-    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015', credentials=credentials)
-
+    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
+                     credentials=credentials)
     return df
 
+
 def top_5_employers(grouper_var, filter_var):
-    if grouper_var == 'landkreis':
-        grouper_var = 'landkreis_georef'
-
-    filter_var = str(filter_var)
-
     query = f"""
         SELECT arbeitgeber, COUNT(arbeitgeber) as refnr
         FROM wagon-bootcamp-384015.dash_work.master_all_jobs
@@ -50,16 +40,12 @@ def top_5_employers(grouper_var, filter_var):
         ORDER BY refnr DESC
         LIMIT 5
         """
-
-    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015', credentials=credentials)
-
+    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
+                     credentials=credentials)
     return df
 
-def top_5_branchengruppe(grouper_var, filter_var):
-    if grouper_var == 'landkreis':
-        grouper_var = 'landkreis_georef'
-    filter_var = str(filter_var)
 
+def top_5_branchengruppe(grouper_var, filter_var):
     query = f"""
         SELECT branchengruppe, COUNT(branchengruppe) as refnr
         FROM wagon-bootcamp-384015.dash_work.master_all_jobs
@@ -68,29 +54,30 @@ def top_5_branchengruppe(grouper_var, filter_var):
         ORDER BY refnr DESC
         LIMIT 5
         """
-    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015', credentials=credentials)
+    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
+                     credentials=credentials)
 
     return df
 
-def pub_date(grouper_var, filter_var):
-    if grouper_var == 'landkreis':
-        grouper_var = 'landkreis_georef'
-    filter_var = str(filter_var)
 
+def pub_date(grouper_var, filter_var):
     query = f"""
-        SELECT aktuelleVeroeffentlichungsdatum, COUNT(aktuelleVeroeffentlichungsdatum) as refnr
+        SELECT aktuelleVeroeffentlichungsdatum,
+        COUNT(aktuelleVeroeffentlichungsdatum) as refnr
         FROM wagon-bootcamp-384015.dash_work.master_all_jobs
         WHERE {grouper_var}='{filter_var}'
         GROUP BY aktuelleVeroeffentlichungsdatum
         ORDER BY aktuelleVeroeffentlichungsdatum
         """
-    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015', credentials=credentials)
+    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
+                     credentials=credentials)
 
     return df
 
+
 @app.get("/")
 def root():
-    return {'greeting': 'This is the root directory'}
+    return {'Hello!': 'You are an amazing person <3'}
 
 
 @app.get("/top_5_employers/")
@@ -102,14 +89,12 @@ def get_top_5_employees(grouper_var: str, filter_var: str):
 @app.get("/top_5_branchengruppe/")
 def get_top_5_branchengruppe(grouper_var: str, filter_var: str):
     df_filtered = top_5_branchengruppe(grouper_var, filter_var)
-
     return {"result": df_filtered.to_json()}
 
 
 @app.get("/pub_date/")
 def get_pub_date(grouper_var: str, filter_var: str):
     df_filtered = pub_date(grouper_var, filter_var)
-
     return {"result": df_filtered.to_json()}
 
 

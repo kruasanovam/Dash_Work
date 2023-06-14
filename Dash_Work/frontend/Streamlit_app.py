@@ -42,7 +42,6 @@ geo_level = st.sidebar.selectbox("Choose geographical level", options=geo_level_
 ## GET THE GEO DATA FOR THE MAP ##
 @st.cache_data()
 def get_map(geolevel):
-    bucket_name = "dash_work_masha"
 
     pathdata = os.path.dirname(os.path.abspath(__file__))
     if geolevel == "Districts and Cities":
@@ -76,11 +75,6 @@ map_colors, filter_variable = get_map_data(geo_level)
 
 map_colors["NumberofJobs"] = map_colors["num_jobs"].astype(float)
 
-try:
-    map_colors["landkreis"] = map_colors["landkreis_georef"]
-except:
-    pass
-
 ## FINISH GET COLORS FOR CHOROPLETH
 
 #### BODY ####
@@ -110,7 +104,7 @@ with col1:
     #### MAP ####
     m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=5.5, width="100%", height=400)
 
-    print ()
+    st.write()
 
     gjson = folium.Choropleth(
         geo_data=gdf,
@@ -260,6 +254,3 @@ with col1:
                     )
 
                     st.plotly_chart(plot_size, use_container_width=True)
-
-# except NameError:
-#     st.write("")
