@@ -22,12 +22,22 @@ app.add_middleware(
 )
 
 
-def get_map_bq(grouper_var):
-    query = f"""SELECT count({grouper_var}) as num_jobs, {grouper_var}
-    FROM wagon-bootcamp-384015.dash_work.master_all_jobs GROUP BY {grouper_var}
-        """
-    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
-                     credentials=credentials)
+def get_map(grouper_var, sector="All Sectors"):
+    if sector == "All Sectors":
+        query = f"""
+            SELECT count({grouper_var}) as num_jobs, {grouper_var}
+            FROM wagon-bootcamp-384015.dash_work.master_all_jobs
+            GROUP BY {grouper_var}
+            """
+        df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
+                         credentials=credentials)
+    else:
+        query = f"""SELECT count({grouper_var}) as num_jobs, {grouper_var}
+            FROM wagon-bootcamp-384015.dash_work.master_all_jobs
+            WHERE branchengruppe={sector}
+            GROUP BY {grouper_var}
+            """
+        df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015', credentials=credentials)
     return df
 
 
@@ -56,7 +66,6 @@ def top_5_branchengruppe(grouper_var, filter_var):
         """
     df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
                      credentials=credentials)
-
     return df
 
 
@@ -71,7 +80,6 @@ def pub_date(grouper_var, filter_var):
         """
     df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015',
                      credentials=credentials)
-
     return df
 
 
@@ -99,6 +107,6 @@ def get_pub_date(grouper_var: str, filter_var: str):
 
 
 @app.get("/maps")
-def get_map_info(grouper_var: str):
-    df = get_map_bq(grouper_var)
+def get_map_info(grouper_var: str, sector: str):
+    df = get_map(grouper_var)
     return {"result": df.to_json()}
