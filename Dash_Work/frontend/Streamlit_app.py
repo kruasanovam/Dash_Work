@@ -1,20 +1,46 @@
-import datetime
 import os
-import pathlib
 import requests
-import zipfile
 import pandas as pd
 import geopandas as gpd
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
 import plotly.express as px
-from google.cloud import storage
+#from Dash_Work.params import SECTORS
 
 #api_url = st.secrets["api_url"]
 api_url="https://dashwork-qjpoayquoq-ew.a.run.app"
+
+SECTORS = ["All Sectors",
+                  "Arbeitnehmerüberlassung, Zeitarbeit",
+                  "Einzelhandel, Großhandel, Außenhandel",
+                  "Management, Beratung, Recht, Steuern",
+                  "Bau, Architektur",
+                  "Gesundheit, Soziales",
+                  "Metall, Maschinenbau, Anlagenbau",
+                  "Arbeitsvermittlung, privat",
+                  "Hotel, Gaststätten, Tourismus, Kunst, Kultur, Freizeit",
+                  "Sicherheits-, Reinigungs-, Reparatur- und weitere Dienstleistungen",
+                  "Logistik, Transport, Verkehr",
+                  "IT, Computer, Telekommunikation",
+                  "Rohstoffverarbeitung, Glas, Keramik, Kunststoff, Holz",
+                  "Elektro, Feinmechanik, Optik, Medizintechnik",
+                  "Nahrungs- / Genussmittelherstellung",
+                  "Öffentlicher Dienst, Organisationen",
+                  "Banken, Finanzdienstleistungen, Immobilien, Versicherungen",
+                  "Bildung, Erziehung, Unterricht",
+                  "Fahrzeugbau, Fahrzeuginstandhaltung",
+                  "Abfallwirtschaft, Energieversorgung, Wasserversorgung",
+                  "Chemie, Pharma, Biotechnologie",
+                  "Landwirtschaft, Forstwirtschaft, Gartenbau",
+                  "Papier, Druck, Verpackung",
+                  "Konsum- und Gebrauchsgüter",
+                  "Werbung, Öffentlichkeitsarbeit",
+                  "Wissenschaft, Forschung, Entwicklung",
+                  "Medien, Informationsdienste",
+                  "Rohstoffgewinnung, Rohstoffaufbereitung",
+                  "Luftfahrttechnik, Raumfahrttechnik"]
 
 st.set_page_config(layout="wide")
 
@@ -36,14 +62,18 @@ st.sidebar.title("Options")
 geo_level_options = ["Districts and Cities", "Bundeslaender"]
 geo_level_default = geo_level_options.index("Districts and Cities") #set default
 geo_level = st.sidebar.selectbox("Choose geographical level", options=geo_level_options, index=geo_level_default)
+
+sector = "All Sectors"
+sector_options = SECTORS
+sector_default = sector_options.index("All Sectors") #set default
+sector = st.sidebar.selectbox("Choose sector to focus on", options=sector_options, index=sector_default)
+
 ## END OF CHOOSE DATA BASE FOR MAP ##
 #### END OF SIDEBAR ####
-
 
 ## GET THE GEO DATA FOR THE MAP ##
 @st.cache_data()
 def get_map(geolevel):
-    bucket_name = "dash_work_masha"
 
     pathdata = os.path.dirname(os.path.abspath(__file__))
     if geolevel == "Districts and Cities":
@@ -62,25 +92,20 @@ gdf = get_map(geo_level)
 
 ## GET COLORS FOR CHOROPLETH MAP ##
 @st.cache_data()
-def get_map_data(geo_level):
+def get_map_data(geo_level, sector):
     if geo_level=="Districts and Cities":
         filter_variable = "landkreis"
     if geo_level=="Bundeslaender":
         filter_variable = "bundesland"
     url = f"{api_url}/maps"
-    params = {"grouper_var": filter_variable}
+    params = {"grouper_var": filter_variable, "sector": sector}
     response = requests.get(url, params).json()["result"]
     response = pd.read_json(response)
     return response, filter_variable
 
-map_colors, filter_variable = get_map_data(geo_level)
+map_colors, filter_variable = get_map_data(geo_level, sector)
 
 map_colors["NumberofJobs"] = map_colors["num_jobs"].astype(float)
-
-try:
-    map_colors["landkreis"] = map_colors["landkreis_georef"]
-except:
-    pass
 
 ## FINISH GET COLORS FOR CHOROPLETH
 
@@ -217,6 +242,7 @@ with col1:
                             "visible":False,
                         }
                         )
+                    
                     plot_employer.update_traces(
                         marker_color="#09316B"
                         )
@@ -229,8 +255,8 @@ with col1:
                     df_filtered_pubdate = requests.get(f"{api_url}/pub_date/", params=params).json()["result"]
                     df_filtered_pubdate = pd.read_json(df_filtered_pubdate)
 
-
                     plot_pubdate = px.line(df_filtered_pubdate[df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"] > "2023-03-31"], x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350, text="refnr")
+
                     plot_pubdate.update_layout(
                         #paper_bgcolor="#EFF2F6",
                         #plot_bgcolor="#EFF2F6",
@@ -278,4 +304,4 @@ with col1:
         with col2:
             #time.sleep(2)
             st.write("""<div class='cards_selection'>Please <b>select a geographical level</b> in the sidebar <b>and a region</b> on the map to aggregate the data accordingly!</div>""", unsafe_allow_html=True)
-#end
+
