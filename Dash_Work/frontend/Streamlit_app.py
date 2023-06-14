@@ -52,11 +52,6 @@ def get_map(geolevel):
         loadfile = "states"
 
     source_blob_name = f"{loadfile}.geo.json"
-    # storage_client = storage.Client()
-    # bucket = storage_client.bucket(bucket_name)
-
-    # blob = bucket.blob(source_blob_name)
-    # blob.download_to_filename(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
 
     gdf = gpd.read_file(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
     return gdf
@@ -109,11 +104,6 @@ with col1:
          grouper_var = "landkreis"
          dropper_var = "bundesland"
 
-    # # THE FOLLOWING MUST GO TO PREPROCESSING #
-    # jobs_online = df.groupby(grouper_var).count().drop(columns=[dropper_var])
-    # jobs_online = jobs_online.reset_index()
-    # # UP MUST GO TO PREPROCESSING #
-
     gdf.index = gdf["name"]
     gdf[grouper_var] = gdf["name"]
 
@@ -160,8 +150,6 @@ with col1:
                                 highlight_function=lambda x: {'weight':3,'fillColor':'grey'},
                             ).add_to(m)
 
-
-
     # ## GET CLICK ON GEO UNIT ##
 
     output = st_folium(m, returned_objects=["last_object_clicked"], width="100%", height=600)
@@ -176,115 +164,102 @@ with col1:
                 filter_var = gdf.name[i]
 
     ## END OF GET CLICK ON GEO UNIT ##
+        params = {"grouper_var": grouper_var,
+                        "filter_var": filter_var
+                    }
+        #### COLUMN 2 DASHBOARD TILES ####
 
-## GET FILTERED DATA SET BASED ON GEO UNIT ##
-## THIS PART WILL BE DONE BY THE GOOGLE QUERY ##
-# try:
-#     if grouper_var=="bundesland":
-#         df_filtered = df[df["bundesland"]==filter_var]
-#     if grouper_var=="landkreis":
-#         df_filtered = df[df["landkreis"]==filter_var]
-#     except:
-#         pass
-## END OF GET FILTERED DATA
-## THE PART ABOVE WILL BE DONE BY THE GOOGLE QUERY
+        with col2:
+            df_filtered_employer = requests.get(f"{api_url}/top_5_employers/", params=params).json()["result"]
+            df_filtered_employer = pd.read_json(df_filtered_employer)
 
-params = {"grouper_var": grouper_var,
-                "filter_var": filter_var
-              }
-#### COLUMN 2 DASHBOARD TILES ####
+            df_filtered_branchengruppe = requests.get(f"{api_url}/top_5_branchengruppe/", params=params).json()["result"]
+            df_filtered_branchengruppe = pd.read_json(df_filtered_branchengruppe)
 
-with col2:
-    df_filtered_employer = requests.get(f"{api_url}/top_5_employers/", params=params).json()["result"]
-    df_filtered_employer = pd.read_json(df_filtered_employer)
+            #num_of_jobs = map_colors[map_colors[filter_var]==filter_var]["NumberofJobs"]
 
-    df_filtered_branchengruppe = requests.get(f"{api_url}/top_5_branchengruppe/", params=params).json()["result"]
-    df_filtered_branchengruppe = pd.read_json(df_filtered_branchengruppe)
+            # with st.container():
+            #     st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
+            #             Open jobs: {map_colors["NumberofJobs"]}</div>""", unsafe_allow_html=True)
 
-    #num_of_jobs = map_colors[map_colors[filter_var]==filter_var]["NumberofJobs"]
+            with st.container():
+                listTabs = ["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"]
+                whitespace = 15
+                tabs = st.tabs([s.center(whitespace,"\u2001") for s in listTabs])
+                with tabs[0]:
+                    st.write(f"""<b>Employers with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
+                    plot_employer = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=490, height=350, text_auto=True)
+                    plot_employer.update_layout(
+                        #paper_bgcolor="#EFF2F6",
+                        #plot_bgcolor="#EFF2F6",
+                        xaxis_title=None,
+                        yaxis_title=None,
+                            )
+                    plot_employer.update_traces(
+                        marker_color="#09316B"
+                            )
 
-    # with st.container():
-    #     st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
-    #             Open jobs: {map_colors["NumberofJobs"]}</div>""", unsafe_allow_html=True)
+                    st.plotly_chart(plot_employer, use_container_width=True)
 
-    with st.container():
-        listTabs = ["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"]
-        whitespace = 15
-        tabs = st.tabs([s.center(whitespace,"\u2001") for s in listTabs])
-        with tabs[0]:
-            st.write(f"""<b>Employers with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-            plot_employer = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=490, height=350, text_auto=True)
-            plot_employer.update_layout(
-                #paper_bgcolor="#EFF2F6",
-                #plot_bgcolor="#EFF2F6",
-                xaxis_title=None,
-                yaxis_title=None,
+                with tabs[1]:
+                    st.write(f"""<b>New jobs in {filter_var} over the last 5 years</b>""", unsafe_allow_html=True)
+
+                    df_filtered_pubdate = requests.get(f"{api_url}/pub_date/", params=params).json()["result"]
+                    df_filtered_pubdate = pd.read_json(df_filtered_pubdate)
+
+
+                    plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350)
+                    plot_pubdate.update_layout(
+                        #paper_bgcolor="#EFF2F6",
+                        #plot_bgcolor="#EFF2F6",
+                        xaxis_title=None,
+                        yaxis_title=None,
+                            )
+                    plot_pubdate.update_traces(
+                        marker_color="#09316B"
+                            )
+                    st.plotly_chart(plot_pubdate, use_container_width=True)
+
+                with tabs[2]:
+                    st.write(f"""<b>Sectors with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
+                    plot_sector = px.bar(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=500, height=350, text_auto=True)
+                    plot_sector.update_layout(
+                        #paper_bgcolor="#EFF2F6",
+                        #plot_bgcolor="#EFF2F6",
+                        xaxis_title=None,
+                        yaxis_title=None,
+                            )
+                    plot_sector.update_traces(
+                        marker_color="#09316B"
+                        )
+
+                    plot_sector.add_annotation(
+                    x="Sector",
+                    xref="x",
+                    yref="y",
+                    font=dict(
+                        family="Courier New, monospace",
+                        size=16,
+                        color="#ffffff"
+                        ),
+                        )
+
+                    st.plotly_chart(plot_sector, use_container_width=True)
+
+                with tabs[3]:
+                    st.write(f"""<b>Split of jobs in {filter_var} based on company size</b>""", unsafe_allow_html=True)
+                    plot_size = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=500, height=350, text_auto=True)
+                    plot_size.update_layout(
+                        #paper_bgcolor="#EFF2F6",
+                        #plot_bgcolor="#EFF2F6",
+                        xaxis_title=None,
+                        yaxis_title=None,
+                            )
+                    plot_size.update_traces(
+                        marker_color="#09316B"
                     )
-            plot_employer.update_traces(
-                marker_color="#09316B"
-                    )
 
-            st.plotly_chart(plot_employer, use_container_width=True)
-
-        with tabs[1]:
-            st.write(f"""<b>New jobs in {filter_var} over the last 5 years</b>""", unsafe_allow_html=True)
-
-            df_filtered_pubdate = requests.get(f"{api_url}/pub_date/", params=params).json()["result"]
-            df_filtered_pubdate = pd.read_json(df_filtered_pubdate)
-
-
-            plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350)
-            plot_pubdate.update_layout(
-                #paper_bgcolor="#EFF2F6",
-                #plot_bgcolor="#EFF2F6",
-                xaxis_title=None,
-                yaxis_title=None,
-                    )
-            plot_pubdate.update_traces(
-                marker_color="#09316B"
-                    )
-            st.plotly_chart(plot_pubdate, use_container_width=True)
-
-        with tabs[2]:
-            st.write(f"""<b>Sectors with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-            plot_sector = px.bar(df_filtered_branchengruppe, x="branchengruppe", y="refnr", width=500, height=350, text_auto=True)
-            plot_sector.update_layout(
-                #paper_bgcolor="#EFF2F6",
-                #plot_bgcolor="#EFF2F6",
-                xaxis_title=None,
-                yaxis_title=None,
-                    )
-            plot_sector.update_traces(
-                marker_color="#09316B"
-                )
-
-            plot_sector.add_annotation(
-            x="Sector",
-            xref="x",
-            yref="y",
-            font=dict(
-                family="Courier New, monospace",
-                size=16,
-                color="#ffffff"
-                ),
-                )
-
-            st.plotly_chart(plot_sector, use_container_width=True)
-
-        with tabs[3]:
-            st.write(f"""<b>Split of jobs in {filter_var} based on company size</b>""", unsafe_allow_html=True)
-            plot_size = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=500, height=350, text_auto=True)
-            plot_size.update_layout(
-                #paper_bgcolor="#EFF2F6",
-                #plot_bgcolor="#EFF2F6",
-                xaxis_title=None,
-                yaxis_title=None,
-                    )
-            plot_size.update_traces(
-                marker_color="#09316B"
-            )
-
-            st.plotly_chart(plot_size, use_container_width=True)
+                    st.plotly_chart(plot_size, use_container_width=True)
 
 # except NameError:
 #     st.write("")
