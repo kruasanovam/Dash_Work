@@ -34,7 +34,7 @@ def get_map(grouper_var, sector="All Sectors"):
     else:
         query = f"""SELECT count({grouper_var}) as num_jobs, {grouper_var}
             FROM wagon-bootcamp-384015.dash_work.master_all_jobs
-            WHERE branchengruppe={sector}
+            WHERE branchengruppe='{sector}'
             GROUP BY {grouper_var}
             """
         df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015', credentials=credentials)
@@ -83,6 +83,19 @@ def pub_date(grouper_var, filter_var):
     return df
 
 
+def company_sizes(grouper_var, filter_var):
+    filter_var = str(filter_var)
+    query = f"""
+        SELECT betriebsgroesse, COUNT(betriebsgroesse) as refnr
+        FROM wagon-bootcamp-384015.dash_work.master_all_jobs
+        WHERE {grouper_var}='{filter_var}'
+        GROUP BY betriebsgroesse
+        ORDER BY betriebsgroesse ASC
+        """
+    df = pd.read_gbq(query=query, project_id='wagon-bootcamp-384015', credentials=credentials)
+    return df
+
+
 @app.get("/")
 def root():
     return {'Hello!': 'You are an amazing person <3'}
@@ -108,5 +121,11 @@ def get_pub_date(grouper_var: str, filter_var: str):
 
 @app.get("/maps")
 def get_map_info(grouper_var: str, sector: str):
-    df = get_map(grouper_var)
+    df = get_map(grouper_var, sector)
+    return {"result": df.to_json()}
+
+
+@app.get("/company_size")
+def get_temp_work(grouper_var: str, filter_var: str):
+    df = company_sizes(grouper_var, filter_var)
     return {"result": df.to_json()}

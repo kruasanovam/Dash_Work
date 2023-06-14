@@ -19,7 +19,7 @@ LOCAL_PROJECT_PATH = os.path.join(os.path.expanduser('~'))
 GCP_PROJECT = 'wagon-bootcamp-384015'
 BQ_DATASET = 'dash_work'
 
-##################  STREAMLIT APP VARS  #####################
+##################  STREAMLIT APP VARIABLES  #####################
 SECTORS = ["All Sectors",
                   "Arbeitnehmerüberlassung, Zeitarbeit",
                   "Einzelhandel, Großhandel, Außenhandel",

@@ -7,7 +7,7 @@ import folium
 from streamlit_folium import st_folium
 from shapely.geometry import Point
 import plotly.express as px
-from params import SECTORS
+from Dash_Work.params import SECTORS
 
 api_url = st.secrets["api_url"]
 
@@ -42,7 +42,7 @@ sector = st.sidebar.selectbox("Choose sector to focus on", options=sector_option
 
 ## GET THE GEO DATA FOR THE MAP ##
 @st.cache_data()
-def get_map(geolevel, sector):
+def get_map(geolevel):
 
     pathdata = os.path.dirname(os.path.abspath(__file__))
     if geolevel == "Districts and Cities":
@@ -56,7 +56,7 @@ def get_map(geolevel, sector):
     gdf = gpd.read_file(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
     return gdf
 
-gdf = get_map(geo_level, sector)
+gdf = get_map(geo_level)
 ## END OF GEO DATA FOR MAP ##
 
 ## GET COLORS FOR CHOROPLETH MAP ##
@@ -67,7 +67,7 @@ def get_map_data(geo_level, sector):
     if geo_level=="Bundeslaender":
         filter_variable = "bundesland"
     url = f"{api_url}/maps"
-    params = {"grouper_var": filter_variable}
+    params = {"grouper_var": filter_variable, "sector": sector}
     response = requests.get(url, params).json()["result"]
     response = pd.read_json(response)
     return response, filter_variable
@@ -174,7 +174,16 @@ with col1:
             df_filtered_branchengruppe = requests.get(f"{api_url}/top_5_branchengruppe/", params=params).json()["result"]
             df_filtered_branchengruppe = pd.read_json(df_filtered_branchengruppe)
 
-            #num_of_jobs = map_colors[map_colors[filter_var]==filter_var]["NumberofJobs"]
+
+            df_filtered_betriebsgroesse = requests.get(f"{api_url}/company_size/", params=params).json()["result"]
+            df_filtered_betriebsgroesse = pd.read_json(df_filtered_betriebsgroesse)
+            df_filtered_betriebsgroesse["Company Size"] = df_filtered_betriebsgroesse["betriebsgroesse"].replace(
+                                                                    {1.0: "less than 6 employees",
+                                                                     2.0: "between 6 and 50 employees",
+                                                                     3.0: "between 51 and 500 employees",
+                                                                     4.0: "between 501 and 5000 employees",
+                                                                     5.0: "between 5001 and 50000 employees",
+                                                                     6.0: "more than 50000 employees"})
 
             with st.container():
                 st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
@@ -238,7 +247,7 @@ with col1:
 
                 with tabs[3]:
                     st.write(f"""<b>Split of jobs in {filter_var} based on company size</b>""", unsafe_allow_html=True)
-                    plot_size = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=500, height=350, text_auto=True)
+                    plot_size = px.bar(df_filtered_betriebsgroesse, x="Company Size", y="refnr", width=500, height=350, text_auto=True)
                     plot_size.update_layout(
                         #paper_bgcolor="#EFF2F6",
                         #plot_bgcolor="#EFF2F6",
@@ -256,3 +265,19 @@ with col1:
         with col2:
             #time.sleep(2)
             st.write("""<div class='cards_selection'>Please <b>select a geographical level</b> in the sidebar <b>and a region</b> on the map to aggregate the data accordingly!</div>""", unsafe_allow_html=True)
+
+# def add_travolta(image_file):
+#     with open(image_file, "rb") as image_file:
+#         encoded_string = base64.b64encode(image_file.read())
+#     st.markdown(
+#     f"""
+#     <style>
+#     .stApp {{
+#         background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
+#         background-size: cover
+#     }}
+#     </style>
+#     """,
+#     unsafe_allow_html=True
+#     )
+# add_travolta('travola.jpg')
