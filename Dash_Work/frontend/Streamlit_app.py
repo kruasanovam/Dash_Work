@@ -278,3 +278,4 @@ with col1:
         with col2:
             #time.sleep(2)
             st.write("""<div class='cards_selection'>Please <b>select a geographical level</b> in the sidebar <b>and a region</b> on the map to aggregate the data accordingly!</div>""", unsafe_allow_html=True)
+#end
