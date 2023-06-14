@@ -50,7 +50,7 @@ st.set_page_config(layout="wide")
 st.sidebar.title("Dash/Work")
 st.sidebar.write(
     '''
-    This is a Dashboard to get an overview on the  labor market  in German regions. Based on currently open job postings, we calculate a score to measure the status of the labor market for each German district and city.
+    This is a Dashboard to get an overview on the state of the labor market in German regions and for different sectors. Based on data from the Bundesagentur für Arbeit (German Federal Employment Agency), the map displays how many jobs are currently open per inhabitant for each German district, city, and Bundesland. 
     ''')
 st.sidebar.write("Find our team and contact information here: [GitHub Repository](https://github.com/LennartSchulze/Dash_Work)")
 
