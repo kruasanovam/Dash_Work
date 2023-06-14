@@ -1,20 +1,15 @@
-import datetime
 import os
-import pathlib
 import requests
-import zipfile
 import pandas as pd
 import geopandas as gpd
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
 import plotly.express as px
-from google.cloud import storage
+from params import SECTORS
 
-#api_url = st.secrets["api_url"]
-api_url="https://dashwork-qjpoayquoq-ew.a.run.app"
+api_url = st.secrets["api_url"]
 
 st.set_page_config(layout="wide")
 
@@ -38,35 +33,7 @@ geo_level_default = geo_level_options.index("Districts and Cities") #set default
 geo_level = st.sidebar.selectbox("Choose geographical level", options=geo_level_options, index=geo_level_default)
 
 sector = "All Sectors"
-sector_options = ["All Sectors",
-                  "Arbeitnehmerüberlassung, Zeitarbeit",
-                  "Einzelhandel, Großhandel, Außenhandel",
-                  "Management, Beratung, Recht, Steuern",
-                  "Bau, Architektur",
-                  "Gesundheit, Soziales",
-                  "Metall, Maschinenbau, Anlagenbau",
-                  "Arbeitsvermittlung, privat",
-                  "Hotel, Gaststätten, Tourismus, Kunst, Kultur, Freizeit",
-                  "Sicherheits-, Reinigungs-, Reparatur- und weitere Dienstleistungen",
-                  "Logistik, Transport, Verkehr",
-                  "IT, Computer, Telekommunikation",
-                  "Rohstoffverarbeitung, Glas, Keramik, Kunststoff, Holz",
-                  "Elektro, Feinmechanik, Optik, Medizintechnik",
-                  "Nahrungs- / Genussmittelherstellung",
-                  "Öffentlicher Dienst, Organisationen",
-                  "Banken, Finanzdienstleistungen, Immobilien, Versicherungen",
-                  "Bildung, Erziehung, Unterricht",
-                  "Fahrzeugbau, Fahrzeuginstandhaltung",
-                  "Abfallwirtschaft, Energieversorgung, Wasserversorgung",
-                  "Chemie, Pharma, Biotechnologie",
-                  "Landwirtschaft, Forstwirtschaft, Gartenbau",
-                  "Papier, Druck, Verpackung",
-                  "Konsum- und Gebrauchsgüter",
-                  "Werbung, Öffentlichkeitsarbeit",
-                  "Wissenschaft, Forschung, Entwicklung",
-                  "Medien, Informationsdienste",
-                  "Rohstoffgewinnung, Rohstoffaufbereitung",
-                  "Luftfahrttechnik, Raumfahrttechnik"]
+sector_options = SECTORS
 sector_default = sector_options.index("All Sectors") #set default
 sector = st.sidebar.selectbox("Choose sector to focus on", options=sector_options, index=sector_default)
 
@@ -76,7 +43,6 @@ sector = st.sidebar.selectbox("Choose sector to focus on", options=sector_option
 ## GET THE GEO DATA FOR THE MAP ##
 @st.cache_data()
 def get_map(geolevel, sector):
-    bucket_name = "dash_work_masha"
 
     pathdata = os.path.dirname(os.path.abspath(__file__))
     if geolevel == "Districts and Cities":
@@ -110,11 +76,6 @@ map_colors, filter_variable = get_map_data(geo_level, sector)
 
 map_colors["NumberofJobs"] = map_colors["num_jobs"].astype(float)
 
-try:
-    map_colors["landkreis"] = map_colors["landkreis_georef"]
-except:
-    pass
-
 ## FINISH GET COLORS FOR CHOROPLETH
 
 #### BODY ####
@@ -147,7 +108,7 @@ with col1:
     #### MAP ####
     m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=5.5, width="100%", height=400)
 
-    print ()
+    st.write()
 
     gjson = folium.Choropleth(
         geo_data=gdf,
