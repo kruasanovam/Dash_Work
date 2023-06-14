@@ -9,7 +9,8 @@ from shapely.geometry import Point
 import plotly.express as px
 #from Dash_Work.params import SECTORS
 
-api_url = st.secrets["api_url"]
+#api_url = st.secrets["api_url"]
+api_url="https://dashwork-qjpoayquoq-ew.a.run.app"
 
 SECTORS = ["All Sectors",
                   "Arbeitnehmerüberlassung, Zeitarbeit",
@@ -136,9 +137,7 @@ with col1:
     gdf[grouper_var] = gdf["name"]
 
     #### MAP ####
-    m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=5.5, width="100%", height=400)
-
-    st.write()
+    m = folium.Map(location=[51.1657, 10.4515], tiles="cartodbpositron", zoom_start=5.5, width="100%", height=400, prefer_canvas=True)
 
     gjson = folium.Choropleth(
         geo_data=gdf,
@@ -204,16 +203,15 @@ with col1:
             df_filtered_branchengruppe = requests.get(f"{api_url}/top_5_branchengruppe/", params=params).json()["result"]
             df_filtered_branchengruppe = pd.read_json(df_filtered_branchengruppe)
 
-
             df_filtered_betriebsgroesse = requests.get(f"{api_url}/company_size/", params=params).json()["result"]
             df_filtered_betriebsgroesse = pd.read_json(df_filtered_betriebsgroesse)
             df_filtered_betriebsgroesse["Company Size"] = df_filtered_betriebsgroesse["betriebsgroesse"].replace(
-                                                                    {1.0: "less than 6 employees",
-                                                                     2.0: "between 6 and 50 employees",
-                                                                     3.0: "between 51 and 500 employees",
-                                                                     4.0: "between 501 and 5000 employees",
-                                                                     5.0: "between 5001 and 50000 employees",
-                                                                     6.0: "more than 50000 employees"})
+                                                                    {1.0: "< 6 employees",
+                                                                     2.0: "6 - 50 employees",
+                                                                     3.0: " 51 - 500 employees",
+                                                                     4.0: "501 - 5000 employees",
+                                                                     5.0: "5001 - 50000 employees",
+                                                                     6.0: "> 50000 employees"})
 
             with st.container():
                 st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
@@ -224,20 +222,31 @@ with col1:
                 listTabs = ["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"]
                 whitespace = 15
                 tabs = st.tabs([s.center(whitespace,"\u2001") for s in listTabs])
+                
                 with tabs[0]:
                     st.write(f"""<b>Employers with most job offers in {filter_var}</b>""", unsafe_allow_html=True)
-                    plot_employer = px.bar(df_filtered_employer, x="arbeitgeber", y="refnr", width=490, height=350, text_auto=True)
+                    plot_employer = px.bar(df_filtered_employer, y="arbeitgeber", x="refnr", width=490, height=350, text_auto=True, orientation="h")
                     plot_employer.update_layout(
                         #paper_bgcolor="#EFF2F6",
                         #plot_bgcolor="#EFF2F6",
                         xaxis_title=None,
                         yaxis_title=None,
-                        yaxis = dict(visible=False)
-                            )
+                        yaxis = {
+                            "visible":True,
+                            "tickmode": "array",
+                            "tickvals": list(range(5)),
+                            "ticktext": [el + '..' for el in df_filtered_employer.arbeitgeber.str.slice(0,20).to_list()],
+                            "autorange":"reversed"
+                        },
+                        xaxis = {
+                            "visible":False,
+                        }
+                        )
+                    
                     plot_employer.update_traces(
                         marker_color="#09316B"
-                            )
-
+                        )
+                    
                     st.plotly_chart(plot_employer, use_container_width=True)
 
                 with tabs[1]:
@@ -246,8 +255,8 @@ with col1:
                     df_filtered_pubdate = requests.get(f"{api_url}/pub_date/", params=params).json()["result"]
                     df_filtered_pubdate = pd.read_json(df_filtered_pubdate)
 
+                    plot_pubdate = px.line(df_filtered_pubdate[df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"] > "2023-03-31"], x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350, text="refnr")
 
-                    plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350, text="refnr")
                     plot_pubdate.update_layout(
                         #paper_bgcolor="#EFF2F6",
                         #plot_bgcolor="#EFF2F6",
@@ -296,18 +305,3 @@ with col1:
             #time.sleep(2)
             st.write("""<div class='cards_selection'>Please <b>select a geographical level</b> in the sidebar <b>and a region</b> on the map to aggregate the data accordingly!</div>""", unsafe_allow_html=True)
 
-# def add_travolta(image_file):
-#     with open(image_file, "rb") as image_file:
-#         encoded_string = base64.b64encode(image_file.read())
-#     st.markdown(
-#     f"""
-#     <style>
-#     .stApp {{
-#         background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
-#         background-size: cover
-#     }}
-#     </style>
-#     """,
-#     unsafe_allow_html=True
-#     )
-# add_travolta('travola.jpg')
