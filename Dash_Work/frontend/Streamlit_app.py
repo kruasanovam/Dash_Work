@@ -13,7 +13,8 @@ from shapely.geometry.polygon import Polygon
 import plotly.express as px
 from google.cloud import storage
 
-api_url = st.secrets["api_url"]
+#api_url = st.secrets["api_url"]
+api_url="https://dashwork-qjpoayquoq-ew.a.run.app"
 
 st.set_page_config(layout="wide")
 
@@ -35,13 +36,46 @@ st.sidebar.title("Options")
 geo_level_options = ["Districts and Cities", "Bundeslaender"]
 geo_level_default = geo_level_options.index("Districts and Cities") #set default
 geo_level = st.sidebar.selectbox("Choose geographical level", options=geo_level_options, index=geo_level_default)
+
+sector = "All Sectors"
+sector_options = ["All Sectors",
+                  "Arbeitnehmerüberlassung, Zeitarbeit",
+                  "Einzelhandel, Großhandel, Außenhandel",
+                  "Management, Beratung, Recht, Steuern",
+                  "Bau, Architektur",
+                  "Gesundheit, Soziales",
+                  "Metall, Maschinenbau, Anlagenbau",
+                  "Arbeitsvermittlung, privat",
+                  "Hotel, Gaststätten, Tourismus, Kunst, Kultur, Freizeit",
+                  "Sicherheits-, Reinigungs-, Reparatur- und weitere Dienstleistungen",
+                  "Logistik, Transport, Verkehr",
+                  "IT, Computer, Telekommunikation",
+                  "Rohstoffverarbeitung, Glas, Keramik, Kunststoff, Holz",
+                  "Elektro, Feinmechanik, Optik, Medizintechnik",
+                  "Nahrungs- / Genussmittelherstellung",
+                  "Öffentlicher Dienst, Organisationen",
+                  "Banken, Finanzdienstleistungen, Immobilien, Versicherungen",
+                  "Bildung, Erziehung, Unterricht",
+                  "Fahrzeugbau, Fahrzeuginstandhaltung",
+                  "Abfallwirtschaft, Energieversorgung, Wasserversorgung",
+                  "Chemie, Pharma, Biotechnologie",
+                  "Landwirtschaft, Forstwirtschaft, Gartenbau",
+                  "Papier, Druck, Verpackung",
+                  "Konsum- und Gebrauchsgüter",
+                  "Werbung, Öffentlichkeitsarbeit",
+                  "Wissenschaft, Forschung, Entwicklung",
+                  "Medien, Informationsdienste",
+                  "Rohstoffgewinnung, Rohstoffaufbereitung",
+                  "Luftfahrttechnik, Raumfahrttechnik"]
+sector_default = sector_options.index("All Sectors") #set default
+sector = st.sidebar.selectbox("Choose sector to focus on", options=sector_options, index=sector_default)
+
 ## END OF CHOOSE DATA BASE FOR MAP ##
 #### END OF SIDEBAR ####
 
-
 ## GET THE GEO DATA FOR THE MAP ##
 @st.cache_data()
-def get_map(geolevel):
+def get_map(geolevel, sector):
     bucket_name = "dash_work_masha"
 
     pathdata = os.path.dirname(os.path.abspath(__file__))
@@ -56,12 +90,12 @@ def get_map(geolevel):
     gdf = gpd.read_file(os.path.join(pathdata, "..", "..", "data","raw_generated", source_blob_name))
     return gdf
 
-gdf = get_map(geo_level)
+gdf = get_map(geo_level, sector)
 ## END OF GEO DATA FOR MAP ##
 
 ## GET COLORS FOR CHOROPLETH MAP ##
 @st.cache_data()
-def get_map_data(geo_level):
+def get_map_data(geo_level, sector):
     if geo_level=="Districts and Cities":
         filter_variable = "landkreis"
     if geo_level=="Bundeslaender":
@@ -72,7 +106,7 @@ def get_map_data(geo_level):
     response = pd.read_json(response)
     return response, filter_variable
 
-map_colors, filter_variable = get_map_data(geo_level)
+map_colors, filter_variable = get_map_data(geo_level, sector)
 
 map_colors["NumberofJobs"] = map_colors["num_jobs"].astype(float)
 
@@ -88,14 +122,17 @@ pathbody = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(pathbody, "style.css")) as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-st.title("Open positions in Germany")
+st.title("Labour Market Dashboard")
 
 col1, col2 = st.columns(2)
 
 ### Column 1
 
 with col1:
-
+    df_temp = pd.DataFrame(gdf["population"])
+    df_temp[filter_variable] = gdf["name"]
+    new_map_colors = map_colors.merge(df_temp[[filter_variable, 'population']], how="inner", on=filter_variable)
+    new_map_colors["score"] = new_map_colors["NumberofJobs"] / new_map_colors["population"]
     # ## GET SCORE - CURRENTLY: ABSOLUTE NUMBER OF JOBS ONLINE PER GEO UNIT ##
     if geo_level == "Bundeslaender":
          grouper_var = "bundesland"
@@ -117,13 +154,14 @@ with col1:
         name="choropleth",
         # data=jobs_online,
         # columns=[grouper_var, "refnr"],
-        data=map_colors,
-        columns=[grouper_var, "NumberofJobs"],
+        data=new_map_colors,
+        columns=[grouper_var, "score"],
         key_on="feature.properties.name",
         fill_color="Blues",
         fill_opacity=0.7,
         line_opacity=1,
         legend_name="Employment Status",
+        nan_fill_color="white"
     ).add_to(m)
 
     #Add Customized Tooltips to the map
@@ -160,7 +198,6 @@ with col1:
         for i in range(len(gdf.geometry)):
             polygon = gdf.geometry[i]
             if polygon.contains(punkt):
-                st.write("The point you clicked on is in", gdf.name[i])
                 filter_var = gdf.name[i]
 
     ## END OF GET CLICK ON GEO UNIT ##
@@ -178,9 +215,10 @@ with col1:
 
             #num_of_jobs = map_colors[map_colors[filter_var]==filter_var]["NumberofJobs"]
 
-            # with st.container():
-            #     st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
-            #             Open jobs: {map_colors["NumberofJobs"]}</div>""", unsafe_allow_html=True)
+            with st.container():
+                st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
+                         Open jobs: {int(map_colors.loc[map_colors[filter_variable]==filter_var,"NumberofJobs"].iloc[0])}<br>
+                         Jobs per inhabitant: {round(new_map_colors.loc[new_map_colors[filter_variable]==filter_var, "score"].iloc[0], 5)}</div>""", unsafe_allow_html=True)
 
             with st.container():
                 listTabs = ["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"]
@@ -194,6 +232,7 @@ with col1:
                         #plot_bgcolor="#EFF2F6",
                         xaxis_title=None,
                         yaxis_title=None,
+                        yaxis = dict(visible=False)
                             )
                     plot_employer.update_traces(
                         marker_color="#09316B"
@@ -208,7 +247,7 @@ with col1:
                     df_filtered_pubdate = pd.read_json(df_filtered_pubdate)
 
 
-                    plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350)
+                    plot_pubdate = px.line(df_filtered_pubdate, x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350, text="refnr")
                     plot_pubdate.update_layout(
                         #paper_bgcolor="#EFF2F6",
                         #plot_bgcolor="#EFF2F6",
@@ -216,7 +255,7 @@ with col1:
                         yaxis_title=None,
                             )
                     plot_pubdate.update_traces(
-                        marker_color="#09316B"
+                        line_color="#09316B"
                             )
                     st.plotly_chart(plot_pubdate, use_container_width=True)
 
@@ -228,20 +267,10 @@ with col1:
                         #plot_bgcolor="#EFF2F6",
                         xaxis_title=None,
                         yaxis_title=None,
+                        yaxis = dict(visible=False)
                             )
                     plot_sector.update_traces(
                         marker_color="#09316B"
-                        )
-
-                    plot_sector.add_annotation(
-                    x="Sector",
-                    xref="x",
-                    yref="y",
-                    font=dict(
-                        family="Courier New, monospace",
-                        size=16,
-                        color="#ffffff"
-                        ),
                         )
 
                     st.plotly_chart(plot_sector, use_container_width=True)
@@ -254,6 +283,7 @@ with col1:
                         #plot_bgcolor="#EFF2F6",
                         xaxis_title=None,
                         yaxis_title=None,
+                        yaxis = dict(visible=False)
                             )
                     plot_size.update_traces(
                         marker_color="#09316B"
@@ -261,5 +291,7 @@ with col1:
 
                     st.plotly_chart(plot_size, use_container_width=True)
 
-# except NameError:
-#     st.write("")
+    else:
+        with col2:
+            #time.sleep(2)
+            st.write("""<div class='cards_selection'>Please <b>select a geographical level</b> in the sidebar <b>and a region</b> on the map to aggregate the data accordingly!</div>""", unsafe_allow_html=True)
