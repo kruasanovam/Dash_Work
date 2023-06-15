@@ -10,8 +10,7 @@ from shapely.geometry import Point
 import plotly.express as px
 #from Dash_Work.params import SECTORS
 
-#api_url = st.secrets["api_url"]
-api_url="https://dashwork-qjpoayquoq-ew.a.run.app"
+api_url = st.secrets["api_url"]
 
 SECTORS = ["All Sectors",
                   "Arbeitnehmerüberlassung, Zeitarbeit",
