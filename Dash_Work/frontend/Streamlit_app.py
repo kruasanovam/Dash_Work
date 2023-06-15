@@ -146,7 +146,7 @@ with col1:
         columns=[grouper_var, "score"],
         key_on="feature.properties.name",
         fill_color="Blues",
-        fill_opacity=0.7,
+        fill_opacity=1,
         line_opacity=0.1,
         legend_name="Employment Status",
         nan_fill_color="white",
