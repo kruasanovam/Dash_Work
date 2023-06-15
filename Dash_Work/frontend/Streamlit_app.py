@@ -142,16 +142,16 @@ with col1:
     gjson = folium.Choropleth(
         geo_data=gdf,
         name="choropleth",
-        # data=jobs_online,
-        # columns=[grouper_var, "refnr"],
         data=new_map_colors,
         columns=[grouper_var, "score"],
         key_on="feature.properties.name",
         fill_color="Blues",
-        fill_opacity=0.7,
+        fill_opacity=0.1,
         line_opacity=1,
         legend_name="Employment Status",
         nan_fill_color="white"
+        line_color="grey",
+        line_weight=0
     ).add_to(m)
 
     #Add Customized Tooltips to the map
