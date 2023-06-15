@@ -265,7 +265,7 @@ with col1:
                     df_filtered_pubdate = requests.get(f"{api_url}/pub_date/", params=params).json()["result"]
                     df_filtered_pubdate = pd.read_json(df_filtered_pubdate)
                     df_filtered_pubdate = df_filtered_pubdate[df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"] > "2023-03-31"]
-                    df_filtered_pubdate["cw"] = pd.to_datetime(df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"]).dt.week
+                    df_filtered_pubdate["cw"] = pd.to_datetime(df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"]).dt.isocalendar().week
                     df_filtered_pubdate = df_filtered_pubdate.groupby(["cw"], as_index=False).sum("refnr")
                     
                     plot_pubdate = px.line(df_filtered_pubdate, x="cw", y="refnr", width=500, height=350, text="refnr")
