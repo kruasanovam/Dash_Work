@@ -4,13 +4,14 @@ import pandas as pd
 import geopandas as gpd
 import streamlit as st
 import folium
+import numpy as np
 from streamlit_folium import st_folium
 from shapely.geometry import Point
 import plotly.express as px
 #from Dash_Work.params import SECTORS
 
-api_url = st.secrets["api_url"]
-#api_url="https://dashwork-qjpoayquoq-ew.a.run.app"
+#api_url = st.secrets["api_url"]
+api_url="https://dashwork-qjpoayquoq-ew.a.run.app"
 
 SECTORS = ["All Sectors",
                   "Arbeitnehmerüberlassung, Zeitarbeit",
@@ -212,11 +213,21 @@ with col1:
                                                                      4.0: "501 - 5000 employees",
                                                                      5.0: "5001 - 50000 employees",
                                                                      6.0: "> 50000 employees"})
-
+            # 150 pro qm -> Urban
+            df_ru_temp = pd.DataFrame(gdf[["name", "population", "size"]])
+            df_ru_temp["ru_marker"] = np.where(df_ru_temp["population"] / df_ru_temp["size"] > 150, "an urban", "a rural")
+            df_ru_temp[grouper_var] = gdf["name"]
+            
             with st.container():
-                st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
-                         Open jobs: {int(map_colors.loc[map_colors[filter_variable]==filter_var,"NumberofJobs"].iloc[0])}<br>
-                         Jobs per inhabitant: {round(new_map_colors.loc[new_map_colors[filter_variable]==filter_var, "score"].iloc[0], 5)}</div>""", unsafe_allow_html=True)
+                if grouper_var == "landkreis":
+                    st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
+                         This is {df_ru_temp.loc[df_ru_temp[filter_variable]==filter_var,"ru_marker"].iloc[0]} district according to OECD guidelines.<br>
+                         Open jobs in {sector}: {int(map_colors.loc[map_colors[filter_variable]==filter_var,"NumberofJobs"].iloc[0])}<br>
+                         Open jobs per inhabitant: {round(new_map_colors.loc[new_map_colors[filter_variable]==filter_var, "score"].iloc[0], 5)}</div>""", unsafe_allow_html=True)
+                else:
+                    st.write(f"""<div class='cards'/><b>{filter_var}</b><br>
+                         Open jobs in {sector}: {int(map_colors.loc[map_colors[filter_variable]==filter_var,"NumberofJobs"].iloc[0])}<br>
+                         Open jobs per inhabitant: {round(new_map_colors.loc[new_map_colors[filter_variable]==filter_var, "score"].iloc[0], 5)}</div>""", unsafe_allow_html=True)
 
             with st.container():
                 listTabs = ["Top Employers", "New Jobs Over Time", "Top Sectors","Company Sizes"]
@@ -250,12 +261,15 @@ with col1:
                     st.plotly_chart(plot_employer, use_container_width=True)
 
                 with tabs[1]:
-                    st.write(f"""<b>New jobs in {filter_var} over the last 5 years</b>""", unsafe_allow_html=True)
+                    st.write(f"""<b>New jobs in {filter_var} over the current quarter</b>""", unsafe_allow_html=True)
 
                     df_filtered_pubdate = requests.get(f"{api_url}/pub_date/", params=params).json()["result"]
                     df_filtered_pubdate = pd.read_json(df_filtered_pubdate)
-
-                    plot_pubdate = px.line(df_filtered_pubdate[df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"] > "2023-03-31"], x="aktuelleVeroeffentlichungsdatum", y="refnr", width=500, height=350, text="refnr")
+                    df_filtered_pubdate = df_filtered_pubdate[df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"] > "2023-03-31"]
+                    df_filtered_pubdate["cw"] = pd.to_datetime(df_filtered_pubdate["aktuelleVeroeffentlichungsdatum"]).dt.week
+                    df_filtered_pubdate = df_filtered_pubdate.groupby(["cw"], as_index=False).sum("refnr")
+                    
+                    plot_pubdate = px.line(df_filtered_pubdate, x="cw", y="refnr", width=500, height=350, text="refnr")
 
                     plot_pubdate.update_layout(
                         #paper_bgcolor="#EFF2F6",

@@ -39,6 +39,7 @@ div#block-container.css-z5fcl4 {
 
 /* Styling Cards right side*/
 .cards {
+    border-width: 1.5px;
     border-style: solid;
     border-color: #DCDCDC;
     border-radius: 0.25rem;
@@ -50,6 +51,7 @@ div#block-container.css-z5fcl4 {
 }
 
 .cards_selection {
+    border-width: 1.5px;
     border-style: solid;
     border-color: #DCDCDC;
     border-radius: 0.25rem;
