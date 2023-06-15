@@ -159,7 +159,7 @@ with col1:
                         data=gdf,
                         name='New Jobs Online',
                         smooth_factor=2,
-                        style_function=lambda x: {'color':'black','fillColor':'transparent','weight':0.5},
+                        style_function=lambda x: {'color':'grey','fillColor':'transparent','weight':0.4},
                         tooltip=folium.features.GeoJsonTooltip(
                             fields=[grouper_var,
                                     ],
