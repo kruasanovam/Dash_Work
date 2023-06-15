@@ -149,7 +149,7 @@ with col1:
         fill_opacity=0.1,
         line_opacity=1,
         legend_name="Employment Status",
-        nan_fill_color="white"
+        nan_fill_color="white",
         line_color="grey",
         line_weight=0
     ).add_to(m)
